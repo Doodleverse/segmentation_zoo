@@ -1,0 +1,11 @@
+water
+whitewater
+sediment
+other_natural_terrain
+vegetated_surface
+agricultural
+development
+cloud
+nodata
+unusual
+unknown

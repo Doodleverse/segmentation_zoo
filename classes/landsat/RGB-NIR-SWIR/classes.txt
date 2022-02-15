@@ -1,0 +1,5 @@
+water
+whitewater
+sediment
+other_natural_terrain
+other
