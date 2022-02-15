@@ -1,10 +1,10 @@
 # :package: Segmentation Zoo :elephant:
-[![Last Commit](https://img.shields.io/github/last-commit/dbuscombe-usgs/segmentation_zoo)](
-https://github.com/dbuscombe-usgs/segmentation_zoo/commits/main)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dbuscombe-usgs/segmentation_zoo/graphs/commit-activity)
-[![Wiki](https://img.shields.io/badge/wiki-documentation-forestgreen)](https://github.com/dbuscombe-usgs/segmentation_zoo/wiki)
-![GitHub](https://img.shields.io/github/license/dbuscombe-usgs/segmentation_zoo)
-[![Wiki](https://img.shields.io/badge/discussion-active-forestgreen)](https://github.com/dbuscombe-usgs/segmentation_zoo/discussions)
+[![Last Commit](https://img.shields.io/github/last-commit/Doodleverse/segmentation_zoo)](
+https://github.com/Doodleverse/segmentation_zoo/commits/main)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Doodleverse/segmentation_zoo/graphs/commit-activity)
+[![Wiki](https://img.shields.io/badge/wiki-documentation-forestgreen)](https://github.com/Doodleverse/segmentation_zoo/wiki)
+![GitHub](https://img.shields.io/github/license/Doodleverse/segmentation_zoo)
+[![Wiki](https://img.shields.io/badge/discussion-active-forestgreen)](https://github.com/Doodleverse/segmentation_zoo/discussions)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)
 ![Keras](https://img.shields.io/badge/Keras-%23D00000.svg?style=for-the-badge&logo=Keras&logoColor=white)
@@ -16,14 +16,15 @@ Hi! This is work in progress - please check back later or use our [Discussions t
 
 ## :star2: Highlights
 * Segmentation Zoo is a repository of image segmentation models, pre-trained using [Segmentation Gym](https://github.com/Doodleverse/segmentation_gym)
-* It serves as a convenient place to access models for tasks involving simple classification schema on common data types such as Landsat-8 scenes and oblique photographs
+* Contains models that made the forthcoming paper: Buscombe and Goldstein (in prep.) "A Reproducible and Reusable Pipeline for Segmentation of Geoscientific Imagery." intended for Earth and Space Science. The models were trained on a subset of the "Coast Train" dataset, described in the forthcoming manuscript Buscombe et al (in prep) "A 1.2 Billion Pixel Human-Labeled Dataset for Data-Driven Classification of Coastal Environments" intended for Scientific Data.
+* It serves as a convenient place to access models for tasks involving simple classification schema on common data types such as Landsat-8 scenes and oblique photographs. We are not promoting these models for universal application for these classification tasks. These models may have some practical usage but are provided primarily for illustrative purposes.
 * Usage of these models is encouraged for practice with [Segmentation Gym](https://github.com/Doodleverse/segmentation_gym) to see the organization and usage of models created by that toolset
 * We hope to eventually provide documentation exemplifying the potential uses of models - please check back later or watch this repository
 
 ## ✍️ Authors
 
 Package maintainers:
-* [@dbuscombe-usgs](https://github.com/dbuscombe-usgs) Marda Science / USGS Pacific Coastal and Marine Science Center.
+* [@Doodleverse](https://github.com/Doodleverse) Marda Science / USGS Pacific Coastal and Marine Science Center.
 
 Contributions:
 * [@2320sharon](https://github.com/2320sharon)
@@ -38,7 +39,7 @@ We welcome collaboration! Please use our [Discussions tab](https://github.com/Do
 2. 'aerial': optical (RGB) oblique photographs of sandy and rocky shoreline environments and two classes (water, land)
 3. ...more are coming. Kindly consider contributing yours.
 
-'landsat' are the models that made the forthcoming paper: Buscombe and Goldstein (in prep.) "A Reproducible and Reusable Pipeline for Segmentation of Geoscientific Imagery." Intended for Earth and Space Science.
+'landsat' are the models that made the forthcoming paper: Buscombe and Goldstein (in prep.) "A Reproducible and Reusable Pipeline for Segmentation of Geoscientific Imagery." intended for Earth and Space Science. The models were trained on a subset of the "Coast Train" dataset, described in the forthcoming manuscript Buscombe et al (in prep) "A 1.2 Billion Pixel Human-Labeled Dataset for Data-Driven Classification of Coastal Environments" intended for Scientific Data.
 
 ### :orange_book: Folder organization 
 Folders are organized with the following structure:
