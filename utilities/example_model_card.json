@@ -1,0 +1,80 @@
+{
+	"DETAILS": {
+	"NAME": "name of model set",
+    "DATE": "YYYY-MM-DD",
+    "URL":"string",
+    "CITATION":"Bloggs, J. (2022) Name. Zenodo data release XXXXXXX",
+    "QUERIES": "email or website",
+    "CREDIT":"Name",
+    "INTENDED_PURPOSE":"Description",
+    "KEYWORDS": {
+      "1": "keyword 1",
+      "2": "keyword 2"
+    }
+	},  
+	"DATASET": {
+	"NAME": "Dataset name", 
+    "SOURCE": "dataset url or description of how to obtain data",
+    "CITATION": "Bloggs et al 2022, Name of dataset: Publisher, URL",
+    "NUMBER_LABELED_IMAGES": 999999,
+		"CLASSES": {
+			"0": "class 1",
+			"1": "class 2",
+			"2": "class 3"
+		},
+		"ORIG_CLASSES": {
+			"0": "orig class 1",
+			"1": "orig class 2",
+			"2": "orig class 3",
+			"3": "orig class 4"
+		},
+		"REMAP_CLASSES": {
+			"0": 0,
+			"1": 2,
+			"2": 4,
+			"3": 6
+		},
+		"N_DATA_BANDS": 3,
+    "BAND_NAMES": {
+      "0": "red",
+      "1": "green",
+      "2": "blue"
+    }
+	},
+	"MODEL": {
+	"NAME": "resunet",
+    "KERNEL":7,
+    "STRIDE":2,
+    "FILTERS":6    
+	},
+	"TRAINING": {
+    "BATCH_SIZE": 8,
+    "DROPOUT":0.1,
+    "DROPOUT_CHANGE_PER_LAYER":0.0,
+    "DROPOUT_TYPE":"standard",
+    "USE_DROPOUT_ON_UPSAMPLING":false,
+    "LOSS":"cat",
+    "PATIENCE": 10,
+    "MAX_EPOCHS": 100,
+    "VALIDATION_SPLIT": 0.6,
+    "RAMPUP_EPOCHS": 20,
+    "SUSTAIN_EPOCHS": 0.0,
+    "EXP_DECAY": 0.9,
+    "START_LR":  1e-7,
+    "MIN_LR": 1e-7,
+    "MAX_LR": 1e-4   
+	},
+	"AUGMENTATION": {
+    "AUGMENTATION_USED": true,
+    "FILTER_VALUE": 0,
+    "AUG_ROT": 0.05,
+    "AUG_ZOOM": 0.05,
+    "AUG_WIDTHSHIFT": 0.05,
+    "AUG_HEIGHTSHIFT": 0.05,
+    "AUG_HFLIP": true,
+    "AUG_VFLIP": false,
+    "AUG_LOOPS": 10,
+    "AUG_COPIES": 5  
+	}     
+}
+

@@ -1,0 +1,19 @@
+name: zoo
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+ - python
+ - scipy
+ - numpy
+ - scikit-image
+ - cython
+ - tensorflow
+ - ipython
+ - jupyter
+ - joblib
+ - tqdm
+ - pandas
+ - pip
+ - pip:
+   - ipyfilechooser
