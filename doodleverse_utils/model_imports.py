@@ -1146,4 +1146,3 @@ def mean_dice_np(y_true, y_pred):
     return (2.0 * intersection + smooth) / (
         np.sum(y_true_f) + np.sum(y_pred_f) + smooth
     )
-
