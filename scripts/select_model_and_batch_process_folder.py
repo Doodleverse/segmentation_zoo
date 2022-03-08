@@ -30,6 +30,7 @@ from tkinter import *
 from tkinter import messagebox
 import requests, zipfile, io
 from glob import glob
+from tqdm import tqdm
 
 def download_url(url, save_path, chunk_size=128):
     r = requests.get(url, stream=True)
@@ -182,7 +183,7 @@ else:
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-from prediction_imports import *
+from doodleverse_utils.prediction_imports import *
 #====================================================
 
 
@@ -200,7 +201,7 @@ for counter,weights in enumerate(Ww):
     for k in config.keys():
         exec(k+'=config["'+k+'"]')
 
-    from imports import *
+    from doodleverse_utils.imports import *
 
     try:
         model = tf.keras.models.load_model(weights)

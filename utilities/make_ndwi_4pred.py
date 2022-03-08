@@ -27,7 +27,7 @@
 
 # utility to merge multiple coincident jpeg images into nd numpy arrays
 import sys,os, time, json, shutil
-sys.path.insert(1, '../scripts/src')
+# sys.path.insert(1, '../scripts/src')
 
 from skimage.io import imread, imsave
 import numpy as np
@@ -270,7 +270,10 @@ files = np.vstack(files).T
 ## NON-AUGMENTED FILES
 ##========================================================
 ###================================
-from imports import *
+# from imports import *
+from doodleverse_utils.prediction_imports import *
+from doodleverse_utils.imports import *
+from doodleverse_utils.model_imports import *
 
 ## make non-aug subset first
 # cycle through pairs of files and labels

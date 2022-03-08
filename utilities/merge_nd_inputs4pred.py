@@ -26,7 +26,9 @@
 
 # utility to merge multiple coincident jpeg images into nd numpy arrays
 import sys,os, time, json, shutil
-sys.path.insert(1, '../scripts/src')
+# sys.path.insert(1, '../scripts/src')
+
+
 
 from skimage.io import imread, imsave
 import numpy as np
@@ -307,7 +309,10 @@ for counter,f in enumerate(files):
 
 
 ###================================
-from imports import *
+# from imports import *
+from doodleverse_utils.prediction_imports import *
+from doodleverse_utils.imports import *
+from doodleverse_utils.model_imports import *
 
 #-----------------------------------
 def load_npz(example):
