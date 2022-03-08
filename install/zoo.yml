@@ -3,19 +3,19 @@ channels:
   - conda-forge
   - defaults
 dependencies:
- - python
- - scipy
- - numpy
- - scikit-image
- - cython
- - tensorflow
- - ipython
- - jupyter
- - joblib
- - tqdm
- - pandas
- - pip
- - plotly
- - pip:
-   - ipyfilechooser
-   - doodleverse_utils
+  - python
+  - scipy
+  - numpy
+  - scikit-image
+  - cython
+  - tensorflow >= 2.0
+  - ipython
+  - jupyter
+  - joblib
+  - tqdm
+  - pandas
+  - pip
+  - plotly
+  - pip:
+      - ipyfilechooser
+      - doodleverse_utils
