@@ -41,6 +41,51 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+#######===================================================
+def make_dir(dirname):
+    # check that the directory does not already exist
+    if not os.path.isdir(dirname):
+        # if not, try to create the directory
+        try:
+            os.mkdir(dirname)
+        # if there is an exception, print to screen and try to continue
+        except Exception as e:
+            print(e)
+    # if the dir already exists, let the user know
+    else:
+        print('{} directory already exists'.format(dirname))
+
+def move_files(files, outdirec):
+    for a_file in files:
+        shutil.move(a_file, outdirec+os.sep+a_file.split(os.sep)[-1])
+
+
+#-----------------------------------
+# custom 2d resizing functions for 2d discrete labels
+def scale(im, nR, nC):
+  '''
+  for reszing 2d integer arrays
+  '''
+  nR0 = len(im)     # source number of rows
+  nC0 = len(im[0])  # source number of columns
+  tmp = [[ im[int(nR0 * r / nR)][int(nC0 * c / nC)]
+             for c in range(nC)] for r in range(nR)]
+  return np.array(tmp).reshape((nR,nC))
+
+#-----------------------------------
+def scale_rgb(img, nR, nC, nD):
+  '''
+  for reszing 3d integer arrays
+  '''
+  imgout = np.zeros((nR, nC, nD))
+  for k in range(3):
+      im = img[:,:,k]
+      nR0 = len(im)     # source number of rows
+      nC0 = len(im[0])  # source number of columns
+      tmp = [[ im[int(nR0 * r / nR)][int(nC0 * c / nC)]
+                 for c in range(nC)] for r in range(nR)]
+      imgout[:,:,k] = np.array(tmp).reshape((nR,nC))
+  return imgout
 
 ##========================================================
 def fromhex(n):
