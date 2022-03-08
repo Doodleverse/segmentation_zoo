@@ -15,6 +15,7 @@ dependencies:
  - tqdm
  - pandas
  - pip
+ - plotly
  - pip:
    - ipyfilechooser
    - doodleverse_utils
