@@ -1,0 +1,11 @@
+scipy
+numpy
+scikit-image
+cython
+tensorflow-gpu
+ipython
+joblib
+tqdm
+pandas
+matplotlib
+versioneer
