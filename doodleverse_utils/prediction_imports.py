@@ -28,6 +28,8 @@ from .imports import standardize, label_to_colors, fromhex
 import os  # , time
 
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 # from skimage.filters.rank import median
 # from skimage.morphology import disk
@@ -124,7 +126,7 @@ def seg_file2tensor_3band(f, TARGET_SIZE):  # , resize):
 
 # =========================================================
 def do_seg(
-    f, M, metadatadict, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG
+    f, M, metadatadict, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA
 ):
 
     if f.endswith("jpg"):
@@ -134,7 +136,8 @@ def do_seg(
     elif f.endswith("npz"):  # in f:
         segfile = f.replace(".npz", "_predseg.png")
 
-    metadatadict["input_file"] = f
+    if WRITE_MODELMETADATA:
+        metadatadict["input_file"] = f
 
     segfile = os.path.normpath(segfile)
     segfile = segfile.replace(
@@ -146,8 +149,9 @@ def do_seg(
     except:
         pass
 
-    metadatadict["nclasses"] = NCLASSES
-    metadatadict["n_data_bands"] = N_DATA_BANDS
+    if WRITE_MODELMETADATA:
+        metadatadict["nclasses"] = NCLASSES
+        metadatadict["n_data_bands"] = N_DATA_BANDS
 
     if NCLASSES == 1:
 
@@ -210,14 +214,16 @@ def do_seg(
 
         est_label = (e1 + (1 - e0)) / 2
 
-        metadatadict["av_prob_stack"] = est_label
+        if WRITE_MODELMETADATA:
+            metadatadict["av_prob_stack"] = est_label
 
         del e0, e1
 
         thres = threshold_otsu(est_label)
         # print("Class threshold: %f" % (thres))
         est_label = (est_label > thres).astype("uint8")
-        metadatadict["otsu_threshold"] = thres
+        if WRITE_MODELMETADATA:
+            metadatadict["otsu_threshold"] = thres
 
     else:  ###NCLASSES>1
 
@@ -272,10 +278,12 @@ def do_seg(
         est_label /= counter + 1
         est_label = resize(est_label, (w, h))
 
-        metadatadict["av_prob_stack"] = est_label
+        if WRITE_MODELMETADATA:
+            metadatadict["av_prob_stack"] = est_label
 
         est_label = np.argmax(est_label, -1)
-        metadatadict["otsu_threshold"] = np.nan
+        if WRITE_MODELMETADATA:
+            metadatadict["otsu_threshold"] = np.nan
 
     # heatmap = resize(heatmap,(w,h), preserve_range=True, clip=True)
 
@@ -298,7 +306,8 @@ def do_seg(
     else:
         class_label_colormap = class_label_colormap[:2]
 
-    metadatadict["color_segmentation_output"] = segfile
+    if WRITE_MODELMETADATA:
+        metadatadict["color_segmentation_output"] = segfile
 
     try:
         color_label = label_to_colors(
@@ -324,17 +333,16 @@ def do_seg(
     elif "png" in f:
         imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
 
-    metadatadict["color_segmentation_output"] = segfile
+    if WRITE_MODELMETADATA:
+        metadatadict["color_segmentation_output"] = segfile
 
     #   segfile = segfile.replace('_meta.npz','_res.npz')
     segfile = segfile.replace("_predseg.png", "_res.npz")
 
-    # datadict['color_label'] = color_label
-    metadatadict["grey_label"] = est_label
-    # datadict['image_fullsize'] = bigimage
-    # datadict['image_targetsize'] = image
+    if WRITE_MODELMETADATA:
+        metadatadict["grey_label"] = est_label
 
-    np.savez_compressed(segfile, **metadatadict)
+        np.savez_compressed(segfile, **metadatadict)
 
     segfile = segfile.replace("_res.npz", "_overlay.png")
 
@@ -348,6 +356,29 @@ def do_seg(
     # plt.show()
     plt.savefig(segfile, dpi=200, bbox_inches="tight")
     plt.close("all")
+
+    #### image - overlay side by side
+    segfile = segfile.replace("_res.npz", "_image_overlay.png")
+
+    plt.subplot(121)
+    if N_DATA_BANDS <= 3:
+        plt.imshow(bigimage)
+    else:
+        plt.imshow(bigimage[:, :, :3])
+    plt.axis("off")
+
+    plt.subplot(122)
+    if N_DATA_BANDS <= 3:
+        plt.imshow(bigimage)
+    else:
+        plt.imshow(bigimage[:, :, :3])
+    plt.imshow(color_label, alpha=0.5)
+    plt.axis("off")
+    # plt.show()
+    plt.savefig(segfile, dpi=200, bbox_inches="tight")
+    plt.close("all")
+
+
 
 
 # --------------------------------------------------------
@@ -393,7 +424,7 @@ def make_gradcam_heatmap(image, model):
     return heatmap
 
 
-###### for patches-based segmentation
+###### for patches-based segmentation 
 
 
 def window2d(window_func, window_size, **kwargs):
