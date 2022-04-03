@@ -40,7 +40,7 @@ def download_url(url, save_path, chunk_size=128):
 
 #### choose zenodo release
 root = Tk()
-choices = ['landsat_6229071', 'landsat_6230083', 'coin_6229579', 'aerial_6234122', 'aerial_6235090']
+choices = ['landsat_6229071', 'landsat_6230083', 'coin_6229579', 'aerial_6234122', 'aerial_6235090', 'ortho_6410157']
 variable = StringVar(root)
 variable.set('landsat_6229071')
 w = OptionMenu(root, variable, *choices)
@@ -67,6 +67,9 @@ elif dataset_id.startswith('coin'):
     dataset = 'RGB'
 
 elif dataset_id.startswith('aerial'):
+    dataset = 'RGB'
+
+elif dataset_id.startswith('ortho'):
     dataset = 'RGB'
 
 ## choose model implementation type
@@ -118,6 +121,10 @@ elif dataset_id.startswith('coin'):
     weights_direc = model_direc + os.sep + 'rgb'
 
 elif dataset_id.startswith('aerial'):
+    filename='rgb.zip'
+    weights_direc = model_direc + os.sep + 'rgb'
+
+elif dataset_id.startswith('ortho'):
     filename='rgb.zip'
     weights_direc = model_direc + os.sep + 'rgb'
 
@@ -312,8 +319,10 @@ print('Number of samples: %i' % (len(sample_filenames)))
 if not 'TESTTIMEAUG' in locals():
     TESTTIMEAUG = False
 
+WRITE_MODELMETADATA = False
+
 for f in tqdm(sample_filenames):
-    do_seg(f, M, metadatadict, sample_direc,NCLASSES,N_DATA_BANDS,TARGET_SIZE,TESTTIMEAUG)
+    do_seg(f, M, metadatadict, sample_direc,NCLASSES,N_DATA_BANDS,TARGET_SIZE,TESTTIMEAUG,WRITE_MODELMETADATA)
 
 
 # w = Parallel(n_jobs=2, verbose=0, max_nbytes=None)(delayed(do_seg)(f) for f in tqdm(sample_filenames))

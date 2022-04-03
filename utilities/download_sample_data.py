@@ -39,7 +39,7 @@ def download_url(url, save_path, chunk_size=128):
 
 #### choose zenodo release
 root = Tk()
-choices = ['landsat_6229071', 'landsat_6230083', 'coin_6229579', 'aerial_6234122', 'aerial_6235090']
+choices = ['landsat_6229071', 'landsat_6230083', 'coin_6229579', 'aerial_6234122', 'aerial_6235090','ortho_6410157']
 variable = StringVar(root)
 variable.set('landsat_6229071')
 w = OptionMenu(root, variable, *choices)
