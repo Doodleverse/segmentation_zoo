@@ -328,11 +328,11 @@ def do_seg(
             do_alpha=False,
         )
 
-    if "jpg" in f:
-        imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
-    elif "png" in f:
-        imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
-
+    # if "jpg" in f:
+    #     imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
+    # elif "png" in f:
+    imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
+    
     if WRITE_MODELMETADATA:
         metadatadict["color_segmentation_output"] = segfile
 

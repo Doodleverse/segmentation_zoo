@@ -28,7 +28,7 @@ import sys,os, time, json, shutil
 # sys.path.insert(1, '../src')
 from .imports import *
 
-
+from natsort import natsorted
 from skimage.io import imread, imsave
 import numpy as np
 from tkinter import filedialog, messagebox
@@ -210,17 +210,17 @@ W.append(data_path)
 
 files = []
 for data_path in W:
-    f = sorted(glob(data_path+os.sep+'*.jpg'))
+    f = natsorted(glob(data_path+os.sep+'*.jpg'))
     if len(f)<1:
-        f = sorted(glob(data_path+os.sep+'images'+os.sep+'*.jpg'))
+        f = natsorted(glob(data_path+os.sep+'images'+os.sep+'*.jpg'))
     files.append(f)
 
 # number of bands x number of samples
 files = np.vstack(files).T
 
-label_files = sorted(glob(label_data_path+os.sep+'*.jpg'))
+label_files = natsorted(glob(label_data_path+os.sep+'*.jpg'))
 if len(label_files)<1:
-    label_files = sorted(glob(label_data_path+os.sep+'labels'+os.sep+'*.jpg'))
+    label_files = natsorted(glob(label_data_path+os.sep+'labels'+os.sep+'*.jpg'))
 
 
 print("Found {} image and {} label files".format(len(files), len(label_files)))
@@ -229,8 +229,19 @@ print("Found {} image and {} label files".format(len(files), len(label_files)))
 ## MAKING PADDED (RESIZED) COPIES OF IMAGERY
 ##========================================================
 
+# ## neeed resizing?
+# szs = [imread(f).shape for f in files[:,0]]
+# szs = np.vstack(szs)[:,0]
+# if len(np.unique(szs))>1:
+#     do_resize=True
+# else:
+#     do_resize=False
+
 ## neeed resizing?
-szs = [imread(f).shape for f in files[:,0]]
+if len(W)>1:
+    szs = [imread(f).shape for f in files[:,0]]
+else:
+    szs = [imread(f).shape for f in files] #[:,0]]
 szs = np.vstack(szs)[:,0]
 if len(np.unique(szs))>1:
     do_resize=True
@@ -275,9 +286,9 @@ if do_resize:
 if do_resize:
     label_data_path = label_data_path.replace('labels','padded_labels')
 
-    label_files = sorted(glob(label_data_path+os.sep+'*.png'))
+    label_files = natsorted(glob(label_data_path+os.sep+'*.png'))
     if len(label_files)<1:
-        label_files = sorted(glob(label_data_path+os.sep+'images'+os.sep+'*.png'))
+        label_files = natsorted(glob(label_data_path+os.sep+'images'+os.sep+'*.png'))
     print("{} label files".format(len(label_files)))
 
     W2 = []
@@ -290,29 +301,15 @@ if do_resize:
 
     files = []
     for data_path in W:
-        f = sorted(glob(data_path+os.sep+'*.png'))
+        f = natsorted(glob(data_path+os.sep+'*.png'))
         if len(f)<1:
-            f = sorted(glob(data_path+os.sep+'images'+os.sep+'*.png'))
+            f = natsorted(glob(data_path+os.sep+'images'+os.sep+'*.png'))
         files.append(f)
 
     # number of bands x number of samples
     files = np.vstack(files).T
     print("{} sets of {} image files".format(len(W),len(files)))
 
-else:
-
-    label_files = sorted(glob(label_data_path+os.sep+'*.jpg'))
-    if len(label_files)<1:
-        label_files = sorted(glob(label_data_path+os.sep+'images'+os.sep+'*.jpg'))
-    print("{} label files".format(len(label_files)))
-
-    files = sorted(glob(data_path+os.sep+'*.jpg'))
-    if len(f)<1:
-        files = sorted(glob(data_path+os.sep+'images'+os.sep+'*.jpg'))
-
-###================================================
-
-from .imports import *
 
 
 ##========================================================

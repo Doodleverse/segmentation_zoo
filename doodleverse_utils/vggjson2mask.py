@@ -148,13 +148,15 @@ def make_jpegs(alpha):
             X, Y, L = get_data(label[img])
             # ALL_CLASSES.append(np.unique(L))
             try:
-               rawfile = [f for f in all_names if f.endswith(img)][0]
+               rawfile = [f for f in all_names if img in f][0] # f.endswith(img)][0]
             except:
+            #    rawfile = [f for f in all_names if f.split(os.sep)[-1].startswith(img[:20])][0] # f.endswith(img)][0]
+            # finally:
                print("Image not found: {}. Skipping ...")
                rawfile = None
 
             if rawfile is not None:
-               image = Image.open(rawfile)		 	
+               image = Image.open(rawfile)	
 
                for orientation in ExifTags.TAGS.keys():
                   # if ExifTags.TAGS[orientation]=='Orientation':
@@ -174,9 +176,9 @@ def make_jpegs(alpha):
                mask, codes = get_mask(X, Y, L, class_dict,image)
                mask = Image.fromarray(mask).convert('L')
                ext = rawfile.split('.')[-1]
-               mask.save((rawfile.split("."+ext)[0]+'_label.jpg').replace(image_path,label_path), format='JPEG')
+               mask.save((rawfile.split("."+ext)[0]+'_label.png').replace(image_path,label_path), format='PNG') #'JPEG')
 
-               image.save((rawfile.split("."+ext)[0]+'.jpg').replace(image_path,out_path), format='JPEG')
+               image.save((rawfile.split("."+ext)[0]+'.png').replace(image_path,out_path), format='PNG') #'JPEG')
 
                # class_label_names = [c.strip() for c in L]
                # class_label_names = np.unique(class_label_names)
