@@ -29,7 +29,7 @@ import os  # , time
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy import io
 
 # from skimage.filters.rank import median
 # from skimage.morphology import disk
@@ -53,6 +53,10 @@ import matplotlib.pyplot as plt
 import tensorflow as tf  # numerical operations on gpu
 import tensorflow.keras.backend as K
 
+#crf
+import pydensecrf.densecrf as dcrf
+from pydensecrf.utils import create_pairwise_bilateral, unary_from_softmax
+# unary_from_labels, 
 
 SEED = 42
 np.random.seed(SEED)
@@ -64,6 +68,106 @@ print("Version: ", tf.__version__)
 print("Eager mode: ", tf.executing_eagerly())
 print("GPU name: ", tf.config.experimental.list_physical_devices("GPU"))
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices("GPU")))
+
+
+# label=softmax_scores.copy()
+# img=bigimage.copy()
+# n=NCLASSES+1
+# crf_theta_slider_value=1
+# crf_mu_slider_value=1
+# crf_downsample_factor=2
+
+##========================================================
+def crf_refine(label,
+    img,n,
+    crf_theta_slider_value,
+    crf_mu_slider_value,
+    crf_downsample_factor): #gt_prob
+    """
+    "crf_refine(label, img)"
+    This function refines a label image based on an input label image and the associated image
+    Uses a conditional random field algorithm using spatial and image features
+    INPUTS:
+        * label [ndarray]: label image 2D matrix of integers
+        * image [ndarray]: image 3D matrix of integers
+    OPTIONAL INPUTS: None
+    GLOBAL INPUTS: None
+    OUTPUTS: label [ndarray]: label image 2D matrix of integers
+    """
+
+    Horig = img.shape[0]
+    Worig = img.shape[1]
+    l_unique = label.shape[-1]
+
+    label = label.reshape(Horig,Worig,l_unique)
+
+    scale = 1+(5 * (np.array(img.shape).max() / 3000))
+
+    # decimate by factor by taking only every other row and column
+    try:
+        img = img[::crf_downsample_factor,::crf_downsample_factor, :]
+    except:
+        img = img[::crf_downsample_factor,::crf_downsample_factor]
+
+    # do the same for the label image
+    label = label[::crf_downsample_factor,::crf_downsample_factor]
+    # yes, I know this aliases, but considering the task, it is ok; the objective is to
+    # make fast inference and resize the output
+
+    H = img.shape[0]
+    W = img.shape[1]
+    # U = unary_from_labels(np.argmax(label,-1).astype('int'), n, gt_prob=gt_prob)
+    # d = dcrf.DenseCRF2D(H, W, n)
+
+    U = unary_from_softmax(np.ascontiguousarray(np.rollaxis(label,-1,0)))
+    d = dcrf.DenseCRF2D(H, W, l_unique)
+
+    d.setUnaryEnergy(U)
+
+    # to add the color-independent term, where features are the locations only:
+    d.addPairwiseGaussian(sxy=(3, 3),
+                 compat=3,
+                 kernel=dcrf.DIAG_KERNEL,
+                 normalization=dcrf.NORMALIZE_SYMMETRIC)
+
+    try:
+        feats = create_pairwise_bilateral(
+                            sdims=(crf_theta_slider_value, crf_theta_slider_value),
+                            schan=(scale,scale,scale),
+                            img=img,
+                            chdim=2)
+
+        d.addPairwiseEnergy(feats, compat=crf_mu_slider_value, kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
+    except:
+        feats = create_pairwise_bilateral(
+                            sdims=(crf_theta_slider_value, crf_theta_slider_value),
+                            schan=(scale,scale, scale),
+                            img=np.dstack((img,img,img)),
+                            chdim=2)
+
+        d.addPairwiseEnergy(feats, compat=crf_mu_slider_value, kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
+
+    Q = d.inference(10)
+    result = np.argmax(Q, axis=0).reshape((H, W)).astype(np.uint8) +1
+
+    # uniq = np.unique(result.flatten())
+
+    result = resize(result, (Horig, Worig), order=0, anti_aliasing=False) #True)
+    result = rescale(result, 1, l_unique).astype(np.uint8)
+
+    return result, l_unique
+
+##========================================================
+def rescale(dat,
+    mn,
+    mx):
+    '''
+    rescales an input dat between mn and mx
+    '''
+    m = min(dat.flatten())
+    M = max(dat.flatten())
+    return (mx-mn)*(dat-m)/(M-m)+mn
+
 
 
 # #-----------------------------------
@@ -126,7 +230,7 @@ def seg_file2tensor_3band(f, TARGET_SIZE):  # , resize):
 
 # =========================================================
 def do_seg(
-    f, M, metadatadict, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA
+    f, M, metadatadict, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA, do_crf
 ):
 
     if f.endswith("jpg"):
@@ -168,7 +272,10 @@ def do_seg(
         for counter, model in enumerate(M):
             # heatmap = make_gradcam_heatmap(tf.expand_dims(image, 0) , model)
 
-            est_label = model.predict(tf.expand_dims(image, 0), batch_size=1).squeeze()
+            try:
+                est_label = model.predict(tf.expand_dims(image, 0), batch_size=1).squeeze()
+            except:
+                est_label = model.predict(tf.expand_dims(image[:,:,0], 0), batch_size=1).squeeze()
 
             if TESTTIMEAUG == True:
                 # return the flipped prediction
@@ -217,13 +324,25 @@ def do_seg(
         if WRITE_MODELMETADATA:
             metadatadict["av_prob_stack"] = est_label
 
+        softmax_scores = np.dstack((e0,e1))
         del e0, e1
 
-        thres = threshold_otsu(est_label)
-        # print("Class threshold: %f" % (thres))
-        est_label = (est_label > thres).astype("uint8")
         if WRITE_MODELMETADATA:
-            metadatadict["otsu_threshold"] = thres
+            metadatadict["av_softmax_scores"] = softmax_scores
+
+        if do_crf:
+            est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES+1, 1, 1, 2)
+
+            est_label = est_label-1
+            if WRITE_MODELMETADATA:
+                metadatadict["otsu_threshold"] = np.nan
+
+        else:
+            thres = threshold_otsu(est_label)
+            # print("Class threshold: %f" % (thres))
+            est_label = (est_label > thres).astype("uint8")
+            if WRITE_MODELMETADATA:
+                metadatadict["otsu_threshold"] = thres
 
     else:  ###NCLASSES>1
 
@@ -277,13 +396,29 @@ def do_seg(
 
         est_label /= counter + 1
         est_label = resize(est_label, (w, h))
-
         if WRITE_MODELMETADATA:
             metadatadict["av_prob_stack"] = est_label
 
-        est_label = np.argmax(est_label, -1)
+        softmax_scores = est_label.copy() #np.dstack((e0,e1))
+
         if WRITE_MODELMETADATA:
-            metadatadict["otsu_threshold"] = np.nan
+            metadatadict["av_softmax_scores"] = softmax_scores
+
+        if do_crf:
+            est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES+1, 1, 1, 2)
+
+            est_label = est_label-1
+            if WRITE_MODELMETADATA:
+                metadatadict["otsu_threshold"] = np.nan
+
+        else:
+            thres = threshold_otsu(est_label)
+            # print("Class threshold: %f" % (thres))
+            est_label = (est_label > thres).astype("uint8")
+            if WRITE_MODELMETADATA:
+                metadatadict["otsu_threshold"] = thres
+
+
 
     # heatmap = resize(heatmap,(w,h), preserve_range=True, clip=True)
 
@@ -319,24 +454,30 @@ def do_seg(
             do_alpha=False,
         )
     except:
-        color_label = label_to_colors(
-            est_label,
-            bigimage[:, :, 0] == 0,
-            alpha=128,
-            colormap=class_label_colormap,
-            color_class_offset=0,
-            do_alpha=False,
-        )
+        try:
+            color_label = label_to_colors(
+                est_label,
+                bigimage[:, :, 0] == 0,
+                alpha=128,
+                colormap=class_label_colormap,
+                color_class_offset=0,
+                do_alpha=False,
+            )
+        except:
+            color_label = label_to_colors(
+                est_label,
+                bigimage == 0,
+                alpha=128,
+                colormap=class_label_colormap,
+                color_class_offset=0,
+                do_alpha=False,
+            )        
 
-    # if "jpg" in f:
-    #     imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
-    # elif "png" in f:
     imsave(segfile, (color_label).astype(np.uint8), check_contrast=False)
     
     if WRITE_MODELMETADATA:
         metadatadict["color_segmentation_output"] = segfile
 
-    #   segfile = segfile.replace('_meta.npz','_res.npz')
     segfile = segfile.replace("_predseg.png", "_res.npz")
 
     if WRITE_MODELMETADATA:
@@ -347,7 +488,7 @@ def do_seg(
     segfile = segfile.replace("_res.npz", "_overlay.png")
 
     if N_DATA_BANDS <= 3:
-        plt.imshow(bigimage)
+        plt.imshow(bigimage, cmap='gray')
     else:
         plt.imshow(bigimage[:, :, :3])
 
@@ -362,24 +503,32 @@ def do_seg(
 
     plt.subplot(121)
     if N_DATA_BANDS <= 3:
-        plt.imshow(bigimage)
+        plt.imshow(bigimage, cmap='gray')
     else:
         plt.imshow(bigimage[:, :, :3])
     plt.axis("off")
 
     plt.subplot(122)
     if N_DATA_BANDS <= 3:
-        plt.imshow(bigimage)
+        plt.imshow(bigimage, cmap='gray')
     else:
         plt.imshow(bigimage[:, :, :3])
-    plt.imshow(color_label, alpha=0.5)
+    if NCLASSES>1:
+        plt.imshow(color_label, alpha=0.5)
+    else:
+        cs = plt.contour(est_label, [-99,0,99], colors='r')
     plt.axis("off")
     # plt.show()
     plt.savefig(segfile, dpi=200, bbox_inches="tight")
     plt.close("all")
 
-
-
+    if NCLASSES==1:
+        segfile = segfile.replace("_overlay.png", "_result.mat")
+        p = cs.collections[0].get_paths()[0]
+        v = p.vertices
+        x = v[:,0]
+        y = v[:,1]
+        io.savemat(segfile, dict(x=x, y=y))
 
 # --------------------------------------------------------
 def make_gradcam_heatmap(image, model):
