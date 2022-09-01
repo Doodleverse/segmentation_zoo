@@ -24,12 +24,7 @@
 # SOFTWARE.
 
 from .model_imports import *
-
-# import os, shutil, json
-# from skimage.io import imsave, imread
-# from skimage.filters.rank import median
-# from skimage.morphology import disk
-# from scipy.ndimage import rotate
+from .model_metrics import *
 
 from glob import glob
 
@@ -220,45 +215,3 @@ def plot_seg_history_iou(history, train_hist_fig):
     # plt.show()
     plt.savefig(train_hist_fig, dpi=200, bbox_inches="tight")
 
-
-#
-# #-----------------------------------
-# def crf_refine(label, img, nclasses = 2, theta_col=100, theta_spat=3, compat=120):
-#     """
-#     "crf_refine(label, img)"
-#     This function refines a label image based on an input label image and the associated image
-#     Uses a conditional random field algorithm using spatial and image features
-#     INPUTS:
-#         * label [ndarray]: label image 2D matrix of integers
-#         * image [ndarray]: image 3D matrix of integers
-#     OPTIONAL INPUTS: None
-#     GLOBAL INPUTS: None
-#     OUTPUTS: label [ndarray]: label image 2D matrix of integers
-#     """
-#
-#     gx,gy = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
-#     # print(gx.shape)
-#     img = np.dstack((img,gx,gy))
-#
-#     H = label.shape[0]
-#     W = label.shape[1]
-#     U = unary_from_labels(1+label,nclasses,gt_prob=0.51)
-#     d = dcrf.DenseCRF2D(H, W, nclasses)
-#     d.setUnaryEnergy(U)
-#
-#     # to add the color-independent term, where features are the locations only:
-#     d.addPairwiseGaussian(sxy=(theta_spat, theta_spat),
-#                  compat=3,
-#                  kernel=dcrf.DIAG_KERNEL,
-#                  normalization=dcrf.NORMALIZE_SYMMETRIC)
-#     feats = create_pairwise_bilateral(
-#                           sdims=(theta_col, theta_col),
-#                           schan=(2,2,2),
-#                           img=img,
-#                           chdim=2)
-#
-#     d.addPairwiseEnergy(feats, compat=compat,kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
-#     Q = d.inference(20)
-#     kl1 = d.klDivergence(Q)
-#     return np.argmax(Q, axis=0).reshape((H, W)).astype(np.uint8), kl1
-#
