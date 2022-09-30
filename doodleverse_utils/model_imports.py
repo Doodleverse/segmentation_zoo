@@ -950,7 +950,7 @@ def batchnorm_act(x):
 # -----------------------------------
 
 #define the basic IOU formula. 
-def new_iou(y_true, y_pred):
+def basic_iou(y_true, y_pred):
     smooth = 10e-6
     y_true_f = tf.reshape(tf.dtypes.cast(y_true, tf.float32), [-1])
     y_pred_f = tf.reshape(tf.dtypes.cast(y_pred, tf.float32), [-1])
@@ -959,7 +959,7 @@ def new_iou(y_true, y_pred):
     return (intersection+smooth)/(union+ smooth)
 
 #define the IoU metric for nclasses
-def MC_mean_iou(nclasses):
+def iou_multi(nclasses):
     """
     mean_iou(y_true, y_pred)
     This function computes the mean IoU between `y_true` and `y_pred`: this version is tensorflow (not numpy) and is used by tensorflow training and evaluation functions
@@ -986,7 +986,7 @@ def MC_mean_iou(nclasses):
         iousum = 0
         y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
         for index in range(nclasses):
-            iousum += new_iou(y_true[:,:,:,index], y_pred[:,:,:,index])
+            iousum += basic_iou(y_true[:,:,:,index], y_pred[:,:,:,index])
         return iousum/nclasses
 
     return mean_iou
