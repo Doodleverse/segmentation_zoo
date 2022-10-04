@@ -984,7 +984,7 @@ def iou_multi(nclasses):
     """
     def mean_iou(y_true, y_pred):
         iousum = 0
-        y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
+        y_pred = tf.one_hot(tf.argmax(y_pred, -1), nclasses)
         for index in range(nclasses):
             iousum += basic_iou(y_true[:,:,:,index], y_pred[:,:,:,index])
         return iousum/nclasses
