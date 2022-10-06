@@ -1076,108 +1076,20 @@ def dice_coef_loss(nclasses):
     return MC_dice_coef_loss
 
 
-# -----------------------------------
-def iou(obs, est, nclasses):
-    IOU = 0
-    smooth = 1.0
-    if nclasses > 1:
-        for n in range(nclasses):
-            component1 = obs == n
-            component2 = est == n
-            overlap = component1 * component2  # Logical AND
-            union = component1 + component2  # Logical OR
-            calc = overlap.sum() / (float(union.sum()) + smooth)
-            if not np.isnan(calc):
-                IOU += calc
-    else:
-        if len(np.unique(obs)) > 1:
-            for n in range(nclasses):
-                component1 = obs == n
-                component2 = est == n
-                overlap = component1 * component2  # Logical AND
-                union = component1 + component2  # Logical OR
-                calc = overlap.sum() / (float(union.sum()) + smooth)
-                if not np.isnan(calc):
-                    IOU += calc
-        else:
-            u = np.unique(obs)[0]
-            IOU = np.sum(est == u) / np.sum(obs == u)
 
-    if IOU > 1:
-        IOU = IOU / n
-
-    return IOU
+def mean_iou_np(y_true, y_pred, nclasses):
+    iousum = 0
+    y_pred = tf.one_hot(tf.argmax(y_pred, -1), nclasses)
+    for index in range(nclasses):
+        iousum += basic_iou(y_true[:,:,:,index], y_pred[:,:,:,index])
+    return (iousum/nclasses).numpy()
 
 
-# #-----------------------------------
+def mean_dice_np(y_true, y_pred, nclasses):
+    dice = 0
+    #can't have an argmax in a loss
+    #y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
+    for index in range(nclasses):
+        dice += basic_dice_coef(y_true[:,:,:,index], y_pred[:,:,:,index])
+    return (dice/nclasses).numpy()
 
-
-def mean_iou_np(y_true, y_pred):
-    """
-    mean_iou(y_true, y_pred)
-    This function computes the mean IoU between `y_true` and `y_pred`: this version is  numpy
-
-    INPUTS:
-        * y_true: true masks, one-hot encoded.
-            * Inputs are B*W*H*N tensors, with
-                B = batch size,
-                W = width,
-                H = height,
-                N = number of classes
-        * y_pred: predicted masks, either softmax outputs, or one-hot encoded.
-            * Inputs are B*W*H*N tensors, with
-                B = batch size,
-                W = width,
-                H = height,
-                N = number of classes
-    OPTIONAL INPUTS: None
-    GLOBAL INPUTS: None
-    OUTPUTS:
-        * IoU score [tensor]
-    """
-    # yt0 = tf.expand_dims(lbl, 0)
-    # yp0 = (est_label > 0.5).astype('float32')
-    yt0 = y_true[:, :, :, 0]
-    yp0 = (y_pred[:, :, :, 0] > 0.5).astype("float32")
-    inter = np.count_nonzero(np.logical_and(np.equal(yt0, 1), np.equal(yp0, 1)))
-    union = np.count_nonzero(tf.add(yt0, yp0))
-    try:
-        iou = np.where(np.equal(union, 0), 1.0, (inter / union))
-    except:
-        iou = 1.0
-
-    return iou
-
-
-# -----------------------------------
-def mean_dice_np(y_true, y_pred):
-    """
-    dice_coef(y_true, y_pred)
-
-    This function computes the mean Dice coefficient between `y_true` and `y_pred`: this version is tensorflow (not numpy) and is used by tensorflow training and evaluation functions
-
-    INPUTS:
-        * y_true: true masks, one-hot encoded.
-            * Inputs are B*W*H*N tensors, with
-                B = batch size,
-                W = width,
-                H = height,
-                N = number of classes
-        * y_pred: predicted masks, either softmax outputs, or one-hot encoded.
-            * Inputs are B*W*H*N tensors, with
-                B = batch size,
-                W = width,
-                H = height,
-                N = number of classes
-    OPTIONAL INPUTS: None
-    GLOBAL INPUTS: None
-    OUTPUTS:
-        * Dice score [tensor]
-    """
-    smooth = 1.0
-    y_true_f = np.reshape(tf.dtypes.cast(y_true, tf.float32), [-1])
-    y_pred_f = np.reshape(tf.dtypes.cast(y_pred, tf.float32), [-1])
-    intersection = np.sum(y_true_f * y_pred_f)
-    return (2.0 * intersection + smooth) / (
-        np.sum(y_true_f) + np.sum(y_pred_f) + smooth
-    )
