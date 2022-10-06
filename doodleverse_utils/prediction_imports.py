@@ -441,18 +441,14 @@ def do_seg(
             metadatadict["av_softmax_scores"] = softmax_scores
 
         if do_crf:
-            est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES+1, 1, 1, 2)
+            est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES, 1, 1, 2)
 
             est_label = est_label-1
             if WRITE_MODELMETADATA:
                 metadatadict["otsu_threshold"] = np.nan
 
         else:
-            thres = threshold_otsu(est_label)
-            # print("Class threshold: %f" % (thres))
-            est_label = (est_label > thres).astype("uint8")
-            if WRITE_MODELMETADATA:
-                metadatadict["otsu_threshold"] = thres
+            est_label = np.argmax(softmax_scores, -1)
 
 
 
