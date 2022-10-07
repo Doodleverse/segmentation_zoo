@@ -991,7 +991,6 @@ def iou_multi(nclasses):
 
     return mean_iou
 
-
 # -----------------------------------
 #define basic Dice formula
 def basic_dice_coef(y_true, y_pred):
@@ -1038,7 +1037,6 @@ def dice_multi(nclasses):
 
     return dice_coef
 
-
 # ---------------------------------------------------
 #define Dice loss for multiple classes
 def dice_coef_loss(nclasses):
@@ -1075,7 +1073,42 @@ def dice_coef_loss(nclasses):
 
     return MC_dice_coef_loss
 
+#define weighted Dice loss for multiple classes
+def weighted_dice_coef_loss(nclasses, weights):
+    """
+    weighted_MC_dice_coef_loss(y_true, y_pred)
 
+    This function computes the mean Dice loss (1 - Dice coefficient) between `y_true` and `y_pred`: this version is tensorflow (not numpy) and is used by tensorflow training and evaluation functions
+
+    INPUTS:
+        * y_true: true masks, one-hot encoded.
+            * Inputs are B*W*H*N tensors, with
+                B = batch size,
+                W = width,
+                H = height,
+                N = number of classes
+        * y_pred: predicted masks, either softmax outputs, or one-hot encoded.
+            * Inputs are B*W*H*N tensors, with
+                B = batch size,
+                W = width,
+                H = height,
+                N = number of classes
+    OPTIONAL INPUTS: None
+    GLOBAL INPUTS: None
+    OUTPUTS:
+        * Dice loss [tensor]
+    """
+
+    def weighted_MC_dice_coef_loss(y_true, y_pred):
+        dice = 0
+        #can't have an argmax in a loss
+        #y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
+        for index in range(nclasses):
+            dice += basic_dice_coef(y_true[:,:,:,index], y_pred[:,:,:,index])*weights[index]
+        meandice = (dice/nclasses)
+        return 1 - meandice
+
+    return weighted_MC_dice_coef_loss
 
 def mean_iou_np(y_true, y_pred, nclasses):
     iousum = 0
