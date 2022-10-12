@@ -146,7 +146,7 @@ def simple_resunet(
         )  #
     else:
         outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax"
+            num_classes, (1, 1), padding="same", activation="softmax", dtype='float32'
         )(
             x
         )  # (1, 1)
@@ -255,7 +255,7 @@ def simple_unet(
         )(x)
     else:
         outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax"
+            num_classes, (1, 1), padding="same", activation="softmax", dtype='float32'
         )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -366,7 +366,7 @@ def simple_satunet(
         )(x)
     else:
         outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax"
+            num_classes, (1, 1), padding="same", activation="softmax", dtype='float32'
         )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -513,7 +513,7 @@ def custom_resunet(
         )(_)
     else:
         outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="softmax"
+            nclasses, (1, 1), padding="same", activation="softmax", dtype='float32'
         )(_)
 
     # model creation
@@ -658,7 +658,7 @@ def custom_unet(
         )(_)
     else:
         outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="softmax"
+            nclasses, (1, 1), padding="same", activation="softmax", dtype='float32'
         )(_)
 
     # model creation
