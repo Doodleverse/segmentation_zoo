@@ -146,7 +146,7 @@ def simple_resunet(
         )  #
     else:
         outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax", dtype='float32'
+            num_classes, (1, 1), padding="same", activation="softmax"
         )(
             x
         )  # (1, 1)
@@ -255,7 +255,7 @@ def simple_unet(
         )(x)
     else:
         outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax", dtype='float32'
+            num_classes, (1, 1), padding="same", activation="softmax"
         )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -366,7 +366,7 @@ def simple_satunet(
         )(x)
     else:
         outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax", dtype='float32'
+            num_classes, (1, 1), padding="same", activation="softmax"
         )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -513,7 +513,7 @@ def custom_resunet(
         )(_)
     else:
         outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="softmax", dtype='float32'
+            nclasses, (1, 1), padding="same", activation="softmax"
         )(_)
 
     # model creation
@@ -658,7 +658,7 @@ def custom_unet(
         )(_)
     else:
         outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="softmax", dtype='float32'
+            nclasses, (1, 1), padding="same", activation="softmax"
         )(_)
 
     # model creation
@@ -1030,7 +1030,6 @@ def dice_multi(nclasses):
     def dice_coef(y_true, y_pred):
         dice = 0
         #can't have an argmax in a loss
-        #y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
         for index in range(nclasses):
             dice += basic_dice_coef(y_true[:,:,:,index], y_pred[:,:,:,index])
         return dice/nclasses
@@ -1066,7 +1065,6 @@ def dice_coef_loss(nclasses):
     def MC_dice_coef_loss(y_true, y_pred):
         dice = 0
         #can't have an argmax in a loss
-        #y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
         for index in range(nclasses):
             dice += basic_dice_coef(y_true[:,:,:,index], y_pred[:,:,:,index])
         return 1 - (dice/nclasses)
@@ -1102,7 +1100,6 @@ def weighted_dice_coef_loss(nclasses, weights):
     def weighted_MC_dice_coef_loss(y_true, y_pred):
         dice = 0
         #can't have an argmax in a loss
-        #y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
         for index in range(nclasses):
             dice += basic_dice_coef(y_true[:,:,:,index], y_pred[:,:,:,index])*weights[index]
         meandice = (dice/nclasses)
@@ -1121,7 +1118,6 @@ def mean_iou_np(y_true, y_pred, nclasses):
 def mean_dice_np(y_true, y_pred, nclasses):
     dice = 0
     #can't have an argmax in a loss
-    #y_pred = tf.one_hot(tf.argmax(y_pred, -1), 4)
     for index in range(nclasses):
         dice += basic_dice_coef(y_true[:,:,:,index], y_pred[:,:,:,index])
     return (dice/nclasses).numpy()

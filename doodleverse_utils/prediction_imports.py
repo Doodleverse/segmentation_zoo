@@ -266,7 +266,9 @@ def seg_file2tensor_3band(f, TARGET_SIZE):  # , resize):
 
 # =========================================================
 def do_seg(
-    f, M, metadatadict, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA, do_crf
+    f, M, metadatadict, sample_direc, 
+    NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA,
+    DO_CRF, OTSU_THRESHOLD
 ):
 
     if f.endswith("jpg"):
@@ -366,19 +368,25 @@ def do_seg(
         if WRITE_MODELMETADATA:
             metadatadict["av_softmax_scores"] = softmax_scores
 
-        if do_crf:
+        if DO_CRF:
             est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES+1, 1, 1, 2)
 
             est_label = est_label-1
             if WRITE_MODELMETADATA:
                 metadatadict["otsu_threshold"] = np.nan
 
-        else:
+        elif OTSU_THRESHOLD:
             thres = threshold_otsu(est_label)
             # print("Class threshold: %f" % (thres))
             est_label = (est_label > thres).astype("uint8")
             if WRITE_MODELMETADATA:
                 metadatadict["otsu_threshold"] = thres
+
+        else:
+            # print("Not using Otsu threshold")
+            est_label = (est_label > 0.5).astype("uint8")
+            if WRITE_MODELMETADATA:
+                metadatadict["otsu_threshold"] = 0.5            
 
     else:  ###NCLASSES>1
 
