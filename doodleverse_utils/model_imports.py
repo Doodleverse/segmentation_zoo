@@ -48,7 +48,7 @@ print("Eager mode: ", tf.executing_eagerly())
 def simple_resunet(
     input_shape,
     kernel=(2, 2),
-    num_classes=1,
+    num_classes=2,
     activation="relu",
     use_batch_norm=True,
     dropout=0.1,
@@ -65,7 +65,7 @@ def simple_resunet(
 
     input_shape: shape (x, y, num_channels)
 
-    num_classes (int): 1 for binary segmentation
+    num_classes (int): 2 for binary segmentation
 
     activation (str): A keras.activations.Activation to use. ReLu by default.
 
@@ -138,18 +138,18 @@ def simple_resunet(
     # outputs = tf.keras.layers.Conv2D(num_classes, (1, 1), activation=output_activation)(x)
 
     # ## classify
-    if num_classes == 1:
-        outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="sigmoid"
-        )(
-            x
-        )  #
-    else:
-        outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax"
-        )(
-            x
-        )  # (1, 1)
+    # if num_classes == 1:
+    #     outputs = tf.keras.layers.Conv2D(
+    #         num_classes, (1, 1), padding="same", activation="sigmoid"
+    #     )(
+    #         x
+    #     )  #
+    # else:
+    outputs = tf.keras.layers.Conv2D(
+        num_classes, (1, 1), padding="same", activation="softmax"
+    )(
+        x
+    )  # (1, 1)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
     return model
@@ -159,7 +159,7 @@ def simple_resunet(
 def simple_unet(
     input_shape,
     kernel=(2, 2),
-    num_classes=1,
+    num_classes=2,
     activation="relu",
     use_batch_norm=True,
     dropout=0.1,
@@ -176,7 +176,7 @@ def simple_unet(
 
     input_shape: shape (x, y, num_channels)
 
-    num_classes (int): 1 for binary segmentation
+    num_classes (int): 2 for binary segmentation
 
     activation (str): A keras.activations.Activation to use. ReLu by default.
 
@@ -249,14 +249,14 @@ def simple_unet(
     # outputs = tf.keras.layers.Conv2D(num_classes, (1, 1), activation=output_activation)(x)
 
     # ## classify
-    if num_classes == 1:
-        outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="sigmoid"
-        )(x)
-    else:
-        outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax"
-        )(x)
+    # if num_classes == 1:
+    #     outputs = tf.keras.layers.Conv2D(
+    #         num_classes, (1, 1), padding="same", activation="sigmoid"
+    #     )(x)
+    # else:
+    outputs = tf.keras.layers.Conv2D(
+        num_classes, (1, 1), padding="same", activation="softmax"
+    )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
     return model
@@ -269,7 +269,7 @@ def simple_unet(
 def simple_satunet(
     input_shape,
     kernel=(2, 2),
-    num_classes=1,
+    num_classes=2,
     activation="relu",
     use_batch_norm=True,
     dropout=0.1,
@@ -286,7 +286,7 @@ def simple_satunet(
 
     input_shape: shape (x, y, num_channels)
 
-    num_classes (int): 1 for binary segmentation
+    num_classes (int): 2 for binary segmentation
 
     activation (str): A keras.activations.Activation to use. ReLu by default.
 
@@ -360,14 +360,14 @@ def simple_satunet(
     # outputs = tf.keras.layers.Conv2D(num_classes, (1, 1), activation=output_activation)(x)
 
     # ## classify
-    if num_classes == 1:
-        outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="sigmoid"
-        )(x)
-    else:
-        outputs = tf.keras.layers.Conv2D(
-            num_classes, (1, 1), padding="same", activation="softmax"
-        )(x)
+    # if num_classes == 1:
+    #     outputs = tf.keras.layers.Conv2D(
+    #         num_classes, (1, 1), padding="same", activation="sigmoid"
+    #     )(x)
+    # else:
+    outputs = tf.keras.layers.Conv2D(
+        num_classes, (1, 1), padding="same", activation="softmax"
+    )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
     return model
@@ -380,7 +380,7 @@ def simple_satunet(
 def custom_resunet(
     sz,
     f,
-    nclasses=1,
+    nclasses=2,
     kernel_size=(7, 7),
     strides=2,
     dropout=0.1,
@@ -507,14 +507,14 @@ def custom_resunet(
     )
 
     # ## classify
-    if nclasses == 1:
-        outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="sigmoid"
-        )(_)
-    else:
-        outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="softmax"
-        )(_)
+    # if nclasses == 1:
+    #     outputs = tf.keras.layers.Conv2D(
+    #         nclasses, (1, 1), padding="same", activation="sigmoid"
+    #     )(_)
+    # else:
+    outputs = tf.keras.layers.Conv2D(
+        nclasses, (1, 1), padding="same", activation="softmax"
+    )(_)
 
     # model creation
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -525,7 +525,7 @@ def custom_resunet(
 def custom_unet(
     sz,
     f,
-    nclasses=1,
+    nclasses=2,
     kernel_size=(7, 7),
     strides=2,
     dropout=0.1,
@@ -534,7 +534,7 @@ def custom_unet(
     use_dropout_on_upsampling=False,
 ):
     """
-    unet(sz, f, nclasses=1)
+    unet(sz, f, nclasses=2)
     This function creates a custom U-Net model for image segmentation
     INPUTS:
         * `sz`: [tuple] size of input image
@@ -652,14 +652,14 @@ def custom_unet(
     )
 
     # ## classify
-    if nclasses == 1:
-        outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="sigmoid"
-        )(_)
-    else:
-        outputs = tf.keras.layers.Conv2D(
-            nclasses, (1, 1), padding="same", activation="softmax"
-        )(_)
+    # if nclasses == 1:
+    #     outputs = tf.keras.layers.Conv2D(
+    #         nclasses, (1, 1), padding="same", activation="sigmoid"
+    #     )(_)
+    # else:
+    outputs = tf.keras.layers.Conv2D(
+        nclasses, (1, 1), padding="same", activation="softmax"
+    )(_)
 
     # model creation
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
