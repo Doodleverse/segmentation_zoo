@@ -448,7 +448,7 @@ def do_seg(
         if WRITE_MODELMETADATA:
             metadatadict["av_softmax_scores"] = softmax_scores
 
-        if do_crf:
+        if DO_CRF:
             est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES, 1, 1, 2)
 
             est_label = est_label-1
@@ -553,16 +553,16 @@ def do_seg(
         plt.imshow(bigimage, cmap='gray')
     else:
         plt.imshow(bigimage[:, :, :3])
-    if NCLASSES>1:
+    if NCLASSES>2:
         plt.imshow(color_label, alpha=0.5)
-    else:
+    elif NCLASSES==2:
         cs = plt.contour(est_label, [-99,0,99], colors='r')
     plt.axis("off")
     # plt.show()
     plt.savefig(segfile, dpi=200, bbox_inches="tight")
     plt.close("all")
 
-    if NCLASSES==1:
+    if NCLASSES==2:
         segfile = segfile.replace("_overlay.png", "_result.mat")
         p = cs.collections[0].get_paths()[0]
         v = p.vertices
