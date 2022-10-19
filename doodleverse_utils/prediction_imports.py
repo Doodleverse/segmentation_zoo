@@ -295,7 +295,7 @@ def do_seg(
         metadatadict["nclasses"] = NCLASSES
         metadatadict["n_data_bands"] = N_DATA_BANDS
 
-    if NCLASSES == 1:
+    if NCLASSES == 2:
 
         if N_DATA_BANDS <= 3:
             image, w, h, bigimage = seg_file2tensor_3band(f, TARGET_SIZE)
@@ -388,7 +388,7 @@ def do_seg(
             if WRITE_MODELMETADATA:
                 metadatadict["otsu_threshold"] = 0.5            
 
-    else:  ###NCLASSES>1
+    else:  ###NCLASSES>2
 
         if N_DATA_BANDS <= 3:
             image, w, h, bigimage = seg_file2tensor_3band(
@@ -458,8 +458,6 @@ def do_seg(
         else:
             est_label = np.argmax(softmax_scores, -1)
 
-
-
     # heatmap = resize(heatmap,(w,h), preserve_range=True, clip=True)
 
     class_label_colormap = [
@@ -476,10 +474,10 @@ def do_seg(
     ]
     # add classes for more than 10 classes
 
-    if NCLASSES > 1:
-        class_label_colormap = class_label_colormap[:NCLASSES]
-    else:
-        class_label_colormap = class_label_colormap[:2]
+    # if NCLASSES > 1:
+    class_label_colormap = class_label_colormap[:NCLASSES]
+    # else:
+    #     class_label_colormap = class_label_colormap[:2]
 
     if WRITE_MODELMETADATA:
         metadatadict["color_segmentation_output"] = segfile
