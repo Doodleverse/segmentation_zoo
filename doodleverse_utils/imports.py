@@ -27,9 +27,9 @@ from .model_imports import *
 from .model_metrics import *
 
 from glob import glob
-
-# import matplotlib.pyplot as plt
+from skimage.io import imread, imsave
 import matplotlib
+import os
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -214,4 +214,40 @@ def plot_seg_history_iou(history, train_hist_fig):
 
     # plt.show()
     plt.savefig(train_hist_fig, dpi=200, bbox_inches="tight")
+
+
+#-----------------------------------
+def do_resize_label(lfile, TARGET_SIZE):
+    ### labels ------------------------------------
+    lab = imread(lfile)
+    result = scale(lab,TARGET_SIZE[0],TARGET_SIZE[1])
+
+    wend = lfile.split(os.sep)[-2]
+    fdir = os.path.dirname(lfile)
+    fdirout = fdir.replace(wend,'resized_'+wend)
+
+    # save result
+    imsave(fdirout+os.sep+lfile.split(os.sep)[-1].replace('.jpg','.png'), result.astype('uint8'), check_contrast=False, compression=0)
+
+
+#-----------------------------------
+def do_resize_image(f, TARGET_SIZE):
+    img = imread(f)
+
+    try:
+        _, _, channels = img.shape
+    except:
+        channels=0
+
+    if channels>0:
+        result = scale_rgb(img,TARGET_SIZE[0],TARGET_SIZE[1],3)
+    else:
+        result = scale(img,TARGET_SIZE[0],TARGET_SIZE[1])
+
+    wend = f.split(os.sep)[-2]
+    fdir = os.path.dirname(f)
+    fdirout = fdir.replace(wend,'resized_'+wend)
+
+    # save result
+    imsave(fdirout+os.sep+f.split(os.sep)[-1].replace('.jpg','.png'), result.astype('uint8'), check_contrast=False, compression=0)
 

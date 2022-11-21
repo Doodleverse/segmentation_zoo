@@ -146,7 +146,7 @@ def simple_resunet(
     #     )  #
     # else:
     outputs = tf.keras.layers.Conv2D(
-        num_classes, (1, 1), padding="same", activation="softmax"
+        num_classes, (1, 1), padding="same", activation="softmax"#, dtype='float32'
     )(
         x
     )  # (1, 1)
@@ -255,7 +255,7 @@ def simple_unet(
     #     )(x)
     # else:
     outputs = tf.keras.layers.Conv2D(
-        num_classes, (1, 1), padding="same", activation="softmax"
+        num_classes, (1, 1), padding="same", activation="softmax"#, dtype='float32'
     )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -366,7 +366,7 @@ def simple_satunet(
     #     )(x)
     # else:
     outputs = tf.keras.layers.Conv2D(
-        num_classes, (1, 1), padding="same", activation="softmax"
+        num_classes, (1, 1), padding="same", activation="softmax"#, dtype='float32'
     )(x)
 
     model = tf.keras.models.Model(inputs=[inputs], outputs=[outputs])
@@ -513,7 +513,7 @@ def custom_resunet(
     #     )(_)
     # else:
     outputs = tf.keras.layers.Conv2D(
-        nclasses, (1, 1), padding="same", activation="softmax"
+        nclasses, (1, 1), padding="same", activation="softmax"#, dtype='float32'
     )(_)
 
     # model creation
@@ -658,7 +658,7 @@ def custom_unet(
     #     )(_)
     # else:
     outputs = tf.keras.layers.Conv2D(
-        nclasses, (1, 1), padding="same", activation="softmax"
+        nclasses, (1, 1), padding="same", activation="softmax"#, dtype='float32'
     )(_)
 
     # model creation
@@ -993,6 +993,7 @@ def iou_multi(nclasses):
 
 # -----------------------------------
 #define basic Dice formula
+# @tf.autograph.experimental.do_not_convert
 def basic_dice_coef(y_true, y_pred):
     """
     dice_coef(y_true, y_pred)
@@ -1025,6 +1026,7 @@ def basic_dice_coef(y_true, y_pred):
     return dice
 
 #define Dice formula for multiple classes
+# @tf.autograph.experimental.do_not_convert
 def dice_multi(nclasses):
 
     def dice_coef(y_true, y_pred):
@@ -1038,6 +1040,7 @@ def dice_multi(nclasses):
 
 # ---------------------------------------------------
 #define Dice loss for multiple classes
+# @tf.autograph.experimental.do_not_convert
 def dice_coef_loss(nclasses):
     """
     dice_coef_loss(y_true, y_pred)
@@ -1072,6 +1075,7 @@ def dice_coef_loss(nclasses):
     return MC_dice_coef_loss
 
 #define weighted Dice loss for multiple classes
+# @tf.autograph.experimental.do_not_convert
 def weighted_dice_coef_loss(nclasses, weights):
     """
     weighted_MC_dice_coef_loss(y_true, y_pred)
