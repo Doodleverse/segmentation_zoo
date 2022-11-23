@@ -25,86 +25,21 @@
 
 
 # utility to merge multiple coincident jpeg images into nd numpy arrays
-import sys,os, time, json, shutil
-# sys.path.insert(1, '../src')
 from .imports import *
-
-from skimage.io import imread, imsave
+import os, json
+from natsort import natsorted
+from skimage.io import imread
 import numpy as np
 from tkinter import filedialog, messagebox
 from tkinter import *
 from glob import glob
-from skimage.transform import rescale ## this is actually for resizing
-from skimage.morphology import remove_small_objects, remove_small_holes
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
-###===========================================
-
 #-----------------------------------
-#-----------------------------------
-def do_pad_image(f, TARGET_SIZE):
-    img = imread(f)
-
-    try:
-        old_image_height, old_image_width, channels = img.shape
-    except:
-        old_image_height, old_image_width = img.shape
-        channels=0
-
-    # create new image of desired size and color (black) for padding
-    new_image_width = TARGET_SIZE[0]
-    new_image_height = TARGET_SIZE[0]
-    if channels>0:
-        color = (0,0,0)
-        result = np.full((new_image_height,new_image_width, channels), color, dtype=np.uint8)
-    else:
-        color = (0)
-        result = np.full((new_image_height,new_image_width), color, dtype=np.uint8)
-
-    # compute center offset
-    x_center = (new_image_width - old_image_width) // 2
-    y_center = (new_image_height - old_image_height) // 2
-
-    try:
-        # copy img image into center of result image
-        result[y_center:y_center+old_image_height,
-               x_center:x_center+old_image_width] = img
-    except:
-        ## AN ALTERNATIVE WAY - DO NOT REMOVE
-        # sf = np.minimum(new_image_width/old_image_width,new_image_height/old_image_height)
-        # if channels>0:
-        #     img = rescale(img,(sf,sf,1),anti_aliasing=True, preserve_range=True, order=1)
-        # else:
-        #     img = rescale(img,(sf,sf),anti_aliasing=True, preserve_range=True, order=1)
-        # if channels>0:
-        #     old_image_height, old_image_width, channels = img.shape
-        # else:
-        #     old_image_height, old_image_width = img.shape
-        #
-        # x_center = (new_image_width - old_image_width) // 2
-        # y_center = (new_image_height - old_image_height) // 2
-        #
-        # result[y_center:y_center+old_image_height,
-        #        x_center:x_center+old_image_width] = img.astype('uint8')
-        if channels>0:
-            result = scale_rgb(img,TARGET_SIZE[0],TARGET_SIZE[1],3)
-        else:
-            result = scale(img,TARGET_SIZE[0],TARGET_SIZE[1])
-
-
-    wend = f.split(os.sep)[-2]
-    fdir = os.path.dirname(f)
-    fdirout = fdir.replace(wend,'padded_'+wend)
-    # save result
-    imsave(fdirout+os.sep+f.split(os.sep)[-1].replace('.jpg','.png'), result.astype('uint8'), check_contrast=False, compression=0)
-
-
-#-----------------------------------
-
 
 root = Tk()
-root.filename =  filedialog.askopenfilename(initialdir = "/segmentation_zoo",title = "Select config file",filetypes = (("config files","*.json"),("all files","*.*")))
+root.filename =  filedialog.askopenfilename(initialdir = os.getcwd(),title = "Select config file",filetypes = (("config files","*.json"),("all files","*.*")))
 configfile = root.filename
 print(configfile)
 root.withdraw()
@@ -127,7 +62,6 @@ if USE_GPU == True:
 else:
    ## to use the CPU (not recommended):
    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
 
 
 #-----------------------------------
@@ -163,72 +97,49 @@ while result == 'yes':
 
 files = []
 for data_path in W:
-    f = sorted(glob(data_path+os.sep+'*.jpg'))
+    f = natsorted(glob(data_path+os.sep+'*.jpg'))
     if len(f)<1:
-        f = sorted(glob(data_path+os.sep+'images'+os.sep+'*.jpg'))
+        f = natsorted(glob(data_path+os.sep+'images'+os.sep+'*.jpg'))
     files.append(f)
 
 # number of bands x number of samples
 files = np.vstack(files).T
 
 ##========================================================
-## MAKING PADDED (RESIZED) COPIES OF IMAGERY
+## MAKING RESIZED COPIES OF IMAGERY
 ##========================================================
 
-# ## neeed resizing?
-# szs = [imread(f).shape for f in files[:,0]]
-# szs = np.vstack(szs)[:,0]
-# if len(np.unique(szs))>1:
-#     do_resize=True
-# else:
-#     do_resize=False
-#
-# from tkinter import simpledialog
-# application_window = Tk()
-# TARGET_X = simpledialog.askinteger("Imagery are different sizes and will be resized.",
-#                                 "What is the TARGET_SIZE (X) of the intended model?",
-#                                  parent=application_window,
-#                                  minvalue=32, maxvalue=8192)
-#
-# TARGET_Y = simpledialog.askinteger("Imagery are different sizes and will be resized.",
-#                                 "What is the TARGET_SIZE (Y) of the intended model?",
-#                                  parent=application_window,
-#                                  minvalue=32, maxvalue=8192)
-#
-# TARGET_SIZE = [TARGET_X,TARGET_Y]
-
-## rersize / pad imagery so all a consistent size (TARGET_SIZE)
-# if do_resize:
-
-## make padded direcs
+## make resized direcs
 for w in W:
     wend = w.split(os.sep)[-1]
     print(wend)
-    newdirec = w.replace(wend,'padded_'+wend)
+    newdirec = w.replace(wend,'resized_'+wend)
     try:
         os.mkdir(newdirec)
     except:
         pass
 
-
-if len(W)==1:
-    for file in files:
-        w = Parallel(n_jobs=-2, verbose=0, max_nbytes=None)(delayed(do_pad_image)(f,TARGET_SIZE) for f in file.squeeze())
-
+# if directories already exist, skip them
+if os.path.isdir(newdirec):#newdireclabels):
+    print("{} already exists: skipping the image resizing step".format(newdirec))
 else:
-    ## cycle through, merge and padd/resize if need to
-    for file in files:
-        for f in file:
-            do_pad_image(f, TARGET_SIZE)
+        
+    if len(W)==1:
+        for file in files:
+            w = Parallel(n_jobs=-2, verbose=0, max_nbytes=None)(delayed(do_resize_image)(f,TARGET_SIZE) for f in file.squeeze())
+
+    else:
+        ## cycle through, merge and padd/resize if need to
+        for file in files:
+            for f in file:
+                do_resize_image(f, TARGET_SIZE)
 
 
-## write padded labels to file
-# if do_resize:
-
+## write resized labels to file
 W2 = []
 for w in W:
     wend = w.split(os.sep)[-1]
-    w = w.replace(wend,'padded_'+wend)
+    w = w.replace(wend,'resized_'+wend)
     W2.append(w)
 W = W2
 del W2
@@ -244,21 +155,12 @@ for data_path in W:
 files = np.vstack(files).T
 print("{} sets of {} image files".format(len(W),len(files)))
 
-# else:
-
-# files = sorted(glob(data_path+os.sep+'*.jpg'))
-# if len(f)<1:
-#     files = sorted(glob(data_path+os.sep+'images'+os.sep+'*.jpg'))
-#
 
 ###================================================
 
 ##========================================================
 ## NON-AUGMENTED FILES
 ##========================================================
-
-
-# ROOT_STRING = 'forpred_'+str(TARGET_SIZE[0])+'_'+str(TARGET_SIZE[1])
 
 ## make non-aug subset first
 # cycle through pairs of files and labels
@@ -273,15 +175,9 @@ for counter,f in enumerate(files):
     datadict['num_bands'] = im.shape[-1]
     datadict['files'] = [fi.split(os.sep)[-1] for fi in f]
     ROOT_STRING = f[0].split(os.sep)[-1].split('.')[0]
-    #print(ROOT_STRING)
     segfile = output_data_path+os.sep+ROOT_STRING+'_noaug_nd_data_000000'+str(counter)+'.npz'
     np.savez_compressed(segfile, **datadict)
     del datadict, im
-
-
-
-###================================
-from .imports import *
 
 #-----------------------------------
 def load_npz(example):
@@ -351,6 +247,5 @@ for imgs,files in dataset.take(10):
      plt.axis('off')
      plt.title(file)
      plt.savefig(output_data_path+os.sep+'noaug_sample'+os.sep+ ROOT_STRING + 'noaug_ex'+str(counter)+'.png', dpi=200, bbox_inches='tight')
-     #counter +=1
      plt.close('all')
      counter += 1
