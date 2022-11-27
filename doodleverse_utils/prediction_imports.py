@@ -53,10 +53,10 @@ import matplotlib.pyplot as plt
 import tensorflow as tf  # numerical operations on gpu
 import tensorflow.keras.backend as K
 
-#crf
-import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import create_pairwise_bilateral, unary_from_softmax
-# unary_from_labels, 
+# #crf
+# import pydensecrf.densecrf as dcrf
+# from pydensecrf.utils import create_pairwise_bilateral, unary_from_softmax
+# # unary_from_labels, 
 
 SEED = 42
 np.random.seed(SEED)
@@ -71,127 +71,127 @@ print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices("
 
 
 
-#-----------------------------------
-def crf_refine_from_integer_labels(label, img, nclasses = 2, theta_col=100, theta_spat=3, compat=120):
-    """
-    "crf_refine(label, img)"
-    This function refines a label image based on an input label image and the associated image
-    Uses a conditional random field algorithm using spatial and image features
-    INPUTS:
-        * label [ndarray]: label image 2D matrix of integers
-        * image [ndarray]: image 3D matrix of integers
-    OPTIONAL INPUTS: None
-    GLOBAL INPUTS: None
-    OUTPUTS: label [ndarray]: label image 2D matrix of integers
-    """
+# #-----------------------------------
+# def crf_refine_from_integer_labels(label, img, nclasses = 2, theta_col=100, theta_spat=3, compat=120):
+#     """
+#     "crf_refine(label, img)"
+#     This function refines a label image based on an input label image and the associated image
+#     Uses a conditional random field algorithm using spatial and image features
+#     INPUTS:
+#         * label [ndarray]: label image 2D matrix of integers
+#         * image [ndarray]: image 3D matrix of integers
+#     OPTIONAL INPUTS: None
+#     GLOBAL INPUTS: None
+#     OUTPUTS: label [ndarray]: label image 2D matrix of integers
+#     """
 
-    gx,gy = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
-    # print(gx.shape)
-    img = np.dstack((img,gx,gy))
+#     gx,gy = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
+#     # print(gx.shape)
+#     img = np.dstack((img,gx,gy))
 
-    H = label.shape[0]
-    W = label.shape[1]
-    U = unary_from_labels(1+label,nclasses,gt_prob=0.51)
-    d = dcrf.DenseCRF2D(H, W, nclasses)
-    d.setUnaryEnergy(U)
+#     H = label.shape[0]
+#     W = label.shape[1]
+#     U = unary_from_labels(1+label,nclasses,gt_prob=0.51)
+#     d = dcrf.DenseCRF2D(H, W, nclasses)
+#     d.setUnaryEnergy(U)
 
-    # to add the color-independent term, where features are the locations only:
-    d.addPairwiseGaussian(sxy=(theta_spat, theta_spat),
-                 compat=3,
-                 kernel=dcrf.DIAG_KERNEL,
-                 normalization=dcrf.NORMALIZE_SYMMETRIC)
-    feats = create_pairwise_bilateral(
-                          sdims=(theta_col, theta_col),
-                          schan=(2,2,2),
-                          img=img,
-                          chdim=2)
+#     # to add the color-independent term, where features are the locations only:
+#     d.addPairwiseGaussian(sxy=(theta_spat, theta_spat),
+#                  compat=3,
+#                  kernel=dcrf.DIAG_KERNEL,
+#                  normalization=dcrf.NORMALIZE_SYMMETRIC)
+#     feats = create_pairwise_bilateral(
+#                           sdims=(theta_col, theta_col),
+#                           schan=(2,2,2),
+#                           img=img,
+#                           chdim=2)
 
-    d.addPairwiseEnergy(feats, compat=compat,kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
-    Q = d.inference(20)
-    kl1 = d.klDivergence(Q)
-    return np.argmax(Q, axis=0).reshape((H, W)).astype(np.uint8), kl1
+#     d.addPairwiseEnergy(feats, compat=compat,kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
+#     Q = d.inference(20)
+#     kl1 = d.klDivergence(Q)
+#     return np.argmax(Q, axis=0).reshape((H, W)).astype(np.uint8), kl1
 
 
 
-##========================================================
-def crf_refine(label,
-    img,n,
-    crf_theta_slider_value,
-    crf_mu_slider_value,
-    crf_downsample_factor): #gt_prob
-    """
-    "crf_refine(label, img)"
-    This function refines a label image based on an input label image and the associated image
-    Uses a conditional random field algorithm using spatial and image features
-    INPUTS:
-        * label [ndarray]: label image 2D matrix of integers
-        * image [ndarray]: image 3D matrix of integers
-    OPTIONAL INPUTS: None
-    GLOBAL INPUTS: None
-    OUTPUTS: label [ndarray]: label image 2D matrix of integers
-    """
+# ##========================================================
+# def crf_refine(label,
+#     img,n,
+#     crf_theta_slider_value,
+#     crf_mu_slider_value,
+#     crf_downsample_factor): #gt_prob
+#     """
+#     "crf_refine(label, img)"
+#     This function refines a label image based on an input label image and the associated image
+#     Uses a conditional random field algorithm using spatial and image features
+#     INPUTS:
+#         * label [ndarray]: label image 2D matrix of integers
+#         * image [ndarray]: image 3D matrix of integers
+#     OPTIONAL INPUTS: None
+#     GLOBAL INPUTS: None
+#     OUTPUTS: label [ndarray]: label image 2D matrix of integers
+#     """
 
-    Horig = img.shape[0]
-    Worig = img.shape[1]
-    l_unique = label.shape[-1]
+#     Horig = img.shape[0]
+#     Worig = img.shape[1]
+#     l_unique = label.shape[-1]
 
-    label = label.reshape(Horig,Worig,l_unique)
+#     label = label.reshape(Horig,Worig,l_unique)
 
-    scale = 1+(5 * (np.array(img.shape).max() / 3000))
+#     scale = 1+(5 * (np.array(img.shape).max() / 3000))
 
-    # decimate by factor by taking only every other row and column
-    try:
-        img = img[::crf_downsample_factor,::crf_downsample_factor, :]
-    except:
-        img = img[::crf_downsample_factor,::crf_downsample_factor]
+#     # decimate by factor by taking only every other row and column
+#     try:
+#         img = img[::crf_downsample_factor,::crf_downsample_factor, :]
+#     except:
+#         img = img[::crf_downsample_factor,::crf_downsample_factor]
 
-    # do the same for the label image
-    label = label[::crf_downsample_factor,::crf_downsample_factor]
-    # yes, I know this aliases, but considering the task, it is ok; the objective is to
-    # make fast inference and resize the output
+#     # do the same for the label image
+#     label = label[::crf_downsample_factor,::crf_downsample_factor]
+#     # yes, I know this aliases, but considering the task, it is ok; the objective is to
+#     # make fast inference and resize the output
 
-    H = img.shape[0]
-    W = img.shape[1]
-    # U = unary_from_labels(np.argmax(label,-1).astype('int'), n, gt_prob=gt_prob)
-    # d = dcrf.DenseCRF2D(H, W, n)
+#     H = img.shape[0]
+#     W = img.shape[1]
+#     # U = unary_from_labels(np.argmax(label,-1).astype('int'), n, gt_prob=gt_prob)
+#     # d = dcrf.DenseCRF2D(H, W, n)
 
-    U = unary_from_softmax(np.ascontiguousarray(np.rollaxis(label,-1,0)))
-    d = dcrf.DenseCRF2D(H, W, l_unique)
+#     U = unary_from_softmax(np.ascontiguousarray(np.rollaxis(label,-1,0)))
+#     d = dcrf.DenseCRF2D(H, W, l_unique)
 
-    d.setUnaryEnergy(U)
+#     d.setUnaryEnergy(U)
 
-    # to add the color-independent term, where features are the locations only:
-    d.addPairwiseGaussian(sxy=(3, 3),
-                 compat=3,
-                 kernel=dcrf.DIAG_KERNEL,
-                 normalization=dcrf.NORMALIZE_SYMMETRIC)
+#     # to add the color-independent term, where features are the locations only:
+#     d.addPairwiseGaussian(sxy=(3, 3),
+#                  compat=3,
+#                  kernel=dcrf.DIAG_KERNEL,
+#                  normalization=dcrf.NORMALIZE_SYMMETRIC)
 
-    try:
-        feats = create_pairwise_bilateral(
-                            sdims=(crf_theta_slider_value, crf_theta_slider_value),
-                            schan=(scale,scale,scale),
-                            img=img,
-                            chdim=2)
+#     try:
+#         feats = create_pairwise_bilateral(
+#                             sdims=(crf_theta_slider_value, crf_theta_slider_value),
+#                             schan=(scale,scale,scale),
+#                             img=img,
+#                             chdim=2)
 
-        d.addPairwiseEnergy(feats, compat=crf_mu_slider_value, kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
-    except:
-        feats = create_pairwise_bilateral(
-                            sdims=(crf_theta_slider_value, crf_theta_slider_value),
-                            schan=(scale,scale, scale),
-                            img=np.dstack((img,img,img)),
-                            chdim=2)
+#         d.addPairwiseEnergy(feats, compat=crf_mu_slider_value, kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
+#     except:
+#         feats = create_pairwise_bilateral(
+#                             sdims=(crf_theta_slider_value, crf_theta_slider_value),
+#                             schan=(scale,scale, scale),
+#                             img=np.dstack((img,img,img)),
+#                             chdim=2)
 
-        d.addPairwiseEnergy(feats, compat=crf_mu_slider_value, kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
+#         d.addPairwiseEnergy(feats, compat=crf_mu_slider_value, kernel=dcrf.DIAG_KERNEL,normalization=dcrf.NORMALIZE_SYMMETRIC)
 
-    Q = d.inference(10)
-    result = np.argmax(Q, axis=0).reshape((H, W)).astype(np.uint8) +1
+#     Q = d.inference(10)
+#     result = np.argmax(Q, axis=0).reshape((H, W)).astype(np.uint8) +1
 
-    # uniq = np.unique(result.flatten())
+#     # uniq = np.unique(result.flatten())
 
-    result = resize(result, (Horig, Worig), order=0, anti_aliasing=False) #True)
-    result = rescale(result, 1, l_unique).astype(np.uint8)
+#     result = resize(result, (Horig, Worig), order=0, anti_aliasing=False) #True)
+#     result = rescale(result, 1, l_unique).astype(np.uint8)
 
-    return result, l_unique
+#     return result, l_unique
 
 ##========================================================
 def rescale(dat,
@@ -268,7 +268,7 @@ def seg_file2tensor_3band(f, TARGET_SIZE):  # , resize):
 def do_seg(
     f, M, metadatadict, sample_direc, 
     NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA,
-    DO_CRF, OTSU_THRESHOLD
+    OTSU_THRESHOLD
 ):
 
     if f.endswith("jpg"):
@@ -368,14 +368,14 @@ def do_seg(
         if WRITE_MODELMETADATA:
             metadatadict["av_softmax_scores"] = softmax_scores
 
-        if DO_CRF:
-            est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES+1, 1, 1, 2)
+        # if DO_CRF:
+        #     est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES+1, 1, 1, 2)
 
-            est_label = est_label-1
-            if WRITE_MODELMETADATA:
-                metadatadict["otsu_threshold"] = np.nan
+        #     est_label = est_label-1
+        #     if WRITE_MODELMETADATA:
+        #         metadatadict["otsu_threshold"] = np.nan
 
-        elif OTSU_THRESHOLD:
+        if OTSU_THRESHOLD:
             thres = threshold_otsu(est_label)
             # print("Class threshold: %f" % (thres))
             est_label = (est_label > thres).astype("uint8")
@@ -448,15 +448,15 @@ def do_seg(
         if WRITE_MODELMETADATA:
             metadatadict["av_softmax_scores"] = softmax_scores
 
-        if DO_CRF:
-            est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES, 1, 1, 2)
+        # if DO_CRF:
+        #     est_label, l_unique = crf_refine(softmax_scores, bigimage, NCLASSES, 1, 1, 2)
 
-            est_label = est_label-1
-            if WRITE_MODELMETADATA:
-                metadatadict["otsu_threshold"] = np.nan
+        #     est_label = est_label-1
+        #     if WRITE_MODELMETADATA:
+        #         metadatadict["otsu_threshold"] = np.nan
 
-        else:
-            est_label = np.argmax(softmax_scores, -1)
+        # else:
+        est_label = np.argmax(softmax_scores, -1)
 
     # heatmap = resize(heatmap,(w,h), preserve_range=True, clip=True)
 
