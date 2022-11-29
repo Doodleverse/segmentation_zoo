@@ -110,20 +110,29 @@ files = np.vstack(files).T
 ##========================================================
 
 ## make resized direcs
+Ww = []
 for w in W:
     wend = w.split(os.sep)[-1]
     print(wend)
     newdirec = w.replace(wend,'resized_'+wend)
-    try:
-        os.mkdir(newdirec)
-    except:
-        pass
+    Ww.append(newdirec)
 
 # if directories already exist, skip them
 if os.path.isdir(newdirec):#newdireclabels):
     print("{} already exists: skipping the image resizing step".format(newdirec))
 else:
-        
+
+    ## make resized direcs
+    for w in W:
+        wend = w.split(os.sep)[-1]
+        print(wend)
+        newdirec = w.replace(wend,'resized_'+wend)
+        try:
+            os.mkdir(newdirec)
+        except:
+            pass
+
+
     if len(W)==1:
         for file in files:
             w = Parallel(n_jobs=-2, verbose=0, max_nbytes=None)(delayed(do_resize_image)(f,TARGET_SIZE) for f in file.squeeze())
@@ -134,26 +143,16 @@ else:
             for f in file:
                 do_resize_image(f, TARGET_SIZE)
 
-
-## write resized labels to file
-W2 = []
-for w in W:
-    wend = w.split(os.sep)[-1]
-    w = w.replace(wend,'resized_'+wend)
-    W2.append(w)
-W = W2
-del W2
-
 files = []
-for data_path in W:
-    f = sorted(glob(data_path+os.sep+'*.png'))
+for data_path in Ww:
+    f = natsorted(glob(data_path+os.sep+'*.png'))
     if len(f)<1:
-        f = sorted(glob(data_path+os.sep+'images'+os.sep+'*.png'))
+        f = natsorted(glob(data_path+os.sep+'images'+os.sep+'*.png'))
     files.append(f)
 
 # number of bands x number of samples
 files = np.vstack(files).T
-print("{} sets of {} image files".format(len(W),len(files)))
+print("{} sets of {} image files".format(len(Ww),len(files)))
 
 
 ###================================================
@@ -232,7 +231,7 @@ print('.....................................')
 print('Printing examples to file ...')
 
 counter=0
-for imgs,files in dataset.take(10):
+for imgs,files in dataset.take(1):
 
   for count,(im, file) in enumerate(zip(imgs, files)):
 
