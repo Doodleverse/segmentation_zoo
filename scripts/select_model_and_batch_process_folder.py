@@ -112,14 +112,14 @@ else:
 
     # download all weights
     for a in all_models:
-        outfile = model_direc + os.sep + a['links']['self'].split(os.sep)[-1]
+        outfile = model_direc + os.sep + a['links']['self'].split('/')[-1]
         if not os.path.isfile(outfile):
             print("Downloading file to {}".format(outfile))
             download_url(a['links']['self'], outfile)
 
     # download all con fig
     for a in all_models:
-        outfile = model_direc + os.sep + a['links']['self'].split(os.sep)[-1]
+        outfile = model_direc + os.sep + a['links']['self'].split('/')[-1]
         outfile = outfile.replace('_fullmodel.h5','.json')
         if not os.path.isfile(outfile):
             print("Downloading file to {}".format(outfile))
