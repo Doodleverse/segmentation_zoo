@@ -38,32 +38,6 @@ from joblib import Parallel, delayed
 
 #-----------------------------------
 
-root = Tk()
-root.filename =  filedialog.askopenfilename(initialdir = os.getcwd(),title = "Select config file",filetypes = (("config files","*.json"),("all files","*.*")))
-configfile = root.filename
-print(configfile)
-root.withdraw()
-
-with open(configfile) as f:
-    config = json.load(f)
-
-for k in config.keys():
-    exec(k+'=config["'+k+'"]')
-
-USE_GPU = True
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-
-if USE_GPU == True:
-    if 'SET_GPU' in locals():
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(SET_GPU)
-    else:
-        #use the first available GPU
-        os.environ['CUDA_VISIBLE_DEVICES'] = '0' #'1'
-else:
-   ## to use the CPU (not recommended):
-   os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
-
 #-----------------------------------
 root = Tk()
 root.filename =  filedialog.askdirectory(initialdir = os.getcwd(),title = "Select directory for storing OUTPUT files")
@@ -104,56 +78,6 @@ for data_path in W:
 
 # number of bands x number of samples
 files = np.vstack(files).T
-
-##========================================================
-## MAKING RESIZED COPIES OF IMAGERY
-##========================================================
-
-## make resized direcs
-Ww = []
-for w in W:
-    wend = w.split(os.sep)[-1]
-    print(wend)
-    newdirec = w.replace(wend,'resized_'+wend)
-    Ww.append(newdirec)
-
-# if directories already exist, skip them
-if os.path.isdir(newdirec):#newdireclabels):
-    print("{} already exists: skipping the image resizing step".format(newdirec))
-else:
-
-    ## make resized direcs
-    for w in W:
-        wend = w.split(os.sep)[-1]
-        print(wend)
-        newdirec = w.replace(wend,'resized_'+wend)
-        try:
-            os.mkdir(newdirec)
-        except:
-            pass
-
-
-    if len(W)==1:
-        for file in files:
-            w = Parallel(n_jobs=-2, verbose=0, max_nbytes=None)(delayed(do_resize_image)(f,TARGET_SIZE) for f in file.squeeze())
-
-    else:
-        ## cycle through, merge and padd/resize if need to
-        for file in files:
-            for f in file:
-                do_resize_image(f, TARGET_SIZE)
-
-files = []
-for data_path in Ww:
-    f = natsorted(glob(data_path+os.sep+'*.png'))
-    if len(f)<1:
-        f = natsorted(glob(data_path+os.sep+'images'+os.sep+'*.png'))
-    files.append(f)
-
-# number of bands x number of samples
-files = np.vstack(files).T
-print("{} sets of {} image files".format(len(Ww),len(files)))
-
 
 ###================================================
 
@@ -209,7 +133,7 @@ def read_seg_dataset_multiclass(example):
 ##========================================================
 ## READ, VERIFY and PLOT NON-AUGMENTED FILES
 ##========================================================
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 
 filenames = tf.io.gfile.glob(output_data_path+os.sep+'*_noaug*.npz')
 dataset = tf.data.Dataset.list_files(filenames, shuffle=False)
@@ -231,7 +155,7 @@ print('.....................................')
 print('Printing examples to file ...')
 
 counter=0
-for imgs,files in dataset.take(1):
+for imgs,files in dataset.take(len(filenames)):
 
   for count,(im, file) in enumerate(zip(imgs, files)):
 
