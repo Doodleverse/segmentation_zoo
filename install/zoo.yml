@@ -3,22 +3,22 @@ channels:
   - conda-forge
   - defaults
 dependencies:
- - python
- - scipy
- - numpy
- - scikit-image
- - cython
- - tensorflow-gpu
- - ipython
- - jupyter
- - joblib
- - tqdm
- - pandas
- - pip
- - plotly
- - natsort
- - matplotlib
- - pip:
-    - doodleverse_utils
-    - ipyfilechooser
-
+  - python
+  - scipy
+  - numpy
+  - scikit-image
+  - cython
+  - tensorflow-gpu
+  - ipython
+  - jupyter
+  - joblib
+  - tqdm
+  - pandas
+  - pip
+  - plotly
+  - natsort
+  - matplotlib
+  - pip:
+      - doodleverse_utils
+      - ipyfilechooser
+      - aiohttp

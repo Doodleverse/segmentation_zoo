@@ -22,13 +22,90 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import sys,os, json
+import asyncio
+import platform
+from glob import glob
+
+import tqdm
+from tqdm.auto import tqdm as auto_tqdm
+import tqdm.asyncio
+
 from tkinter import filedialog
 from tkinter import *
 import requests
-from glob import glob
-from tqdm import tqdm
+import aiohttp
+import tensorflow as tf
+# specify where imports come from
+from doodleverse_utils.prediction_imports import do_seg
+
+async def fetch(session, url: str, save_path: str):
+    model_name = url.split("/")[-1]
+    chunk_size: int = 128
+    async with session.get(url, raise_for_status=True) as r:
+        content_length = r.headers.get("Content-Length")
+        if content_length is not None:
+            content_length = int(content_length)
+            with open(save_path, "wb") as fd:
+                with auto_tqdm(
+                    total=content_length,
+                    unit="B",
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=f"Downloading {model_name}",
+                    initial=0,
+                    ascii=False,
+                ) as pbar:
+                    async for chunk in r.content.iter_chunked(chunk_size):
+                        fd.write(chunk)
+                        pbar.update(len(chunk))
+        else:
+            with open(save_path, "wb") as fd:
+                async for chunk in r.content.iter_chunked(chunk_size):
+                    fd.write(chunk)
+
+async def fetch_all(session, url_dict):
+    tasks = []
+    for save_path, url in url_dict.items():
+        task = asyncio.create_task(fetch(session, url, save_path))
+        tasks.append(task)
+    # await tqdm.gather(tasks)
+    await tqdm.asyncio.tqdm.gather(tasks)
+    # await tqdm.gather(*tasks)
+
+async def async_download_urls(url_dict: dict) -> None:
+    async with aiohttp.ClientSession() as session:
+        await fetch_all(session, url_dict)
+
+def run_async_download(url_dict: dict):
+    if platform.system() == "Windows":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # wait for async downloads to complete
+    asyncio.run(async_download_urls(url_dict))
+
+def get_url_dict_to_download(models_json_dict: dict) -> dict:
+    """Returns dictionary of paths to save files to download
+    and urls to download file
+
+    ex.
+    {'C:\Home\Project\file.json':"https://website/file.json"}
+
+    Args:
+        models_json_dict (dict): full path to files and links
+
+    Returns:
+        dict: full path to files and links
+    """
+    url_dict = {}
+    for save_path, link in models_json_dict.items():
+        if not os.path.isfile(save_path):
+            url_dict[save_path] = link
+        json_filepath = save_path.replace("_fullmodel.h5", ".json")
+        if not os.path.isfile(json_filepath):
+            json_link = link.replace("_fullmodel.h5", ".json")
+            url_dict[json_filepath] = json_link
+
+    return url_dict
 
 def download_url(url, save_path, chunk_size=128):
     r = requests.get(url, stream=True)
@@ -61,71 +138,96 @@ variable.set('ENSEMBLE')
 w = OptionMenu(root, variable, *choices)
 w.pack(); root.mainloop()
 
+# directory that holds all downloaded models
+downloaded_models_dir = os.getcwd() + os.sep+ 'downloaded_models'
+# directory that holds specific downloaded model
+model_direc = os.path.join(downloaded_models_dir, dataset_id)
+
 model_choice = variable.get()
 print("Model implementation choice : {}".format(model_choice))
 
 ####======================================
-try:
-    os.mkdir('../downloaded_models')
-except:
-    pass
 
-try:
-    os.mkdir('../downloaded_models/'+dataset_id)
-except:
-    pass
+if not os.path.isdir(downloaded_models_dir):
+    print(f"Creating {downloaded_models_dir}")
+    os.mkdir(downloaded_models_dir)
 
-model_direc = '../downloaded_models/'+dataset_id
+
+model_direc = os.path.join(downloaded_models_dir, dataset_id)
+if not os.path.isdir(model_direc):
+    print(f"Creating {model_direc}")
+    os.mkdir(model_direc)
+
+# Send request to zenodo for selected model by zenodo_id
 
 root_url = 'https://zenodo.org/api/records/'+zenodo_id
 
 r = requests.get(root_url)
 
+# get list of all files associated with zenodo id
 js = json.loads(r.text)
 files = js['files']
 
-if model_choice=='BEST':
-    # grab just the best model text file
-    best_model_txt = [f for f in files if f['key']=='BEST_MODEL.txt']
-    download_url(best_model_txt[0]['links']['self'], model_direc + os.sep + 'BEST_MODEL.txt')
-    # read in that file 
-    with open(model_direc + os.sep + 'BEST_MODEL.txt') as f:
-        dat = f.read()
+# dictionary to hold urls and full path to save models at
+models_json_dict = {}
 
-    # get best model and download it
-    best_model_h5 = [f for f in files if f['key']==dat]
-    outfile = model_direc + os.sep + dat
-    if not os.path.isfile(outfile):
-        print("Downloading file to {}".format(outfile))
-        download_url(best_model_h5[0]['links']['self'], outfile)
+if model_choice=='BEST':
+    # retrieve best model text file
+    best_model_json = [f for f in files if f["key"] == "BEST_MODEL.txt"][0]
+    best_model_txt_path = model_direc + os.sep + "BEST_MODEL.txt"
+    
+    # if best BEST_MODEL.txt file not exist then download it
+    if not os.path.isfile(best_model_txt_path):
+        download_url(
+            best_model_json["links"]["self"],
+            best_model_txt_path,
+        )
+    
+    # read in that file 
+    with open(best_model_txt_path) as f:
+        filename = f.read()
+
+    # check if json and h5 file in BEST_MODEL.txt exist
+    model_json = [f for f in files if f["key"] == filename][0]
+    # path to save model
+    outfile = model_direc + os.sep + filename
+    
+    # path to save file and json data associated with file saved to dict
+    models_json_dict[outfile] = model_json["links"]["self"]
+    url_dict = get_url_dict_to_download(models_json_dict)
+    # if any files are not found locally download them asynchronous
+    if url_dict != {}:
+        run_async_download(url_dict)
+    
 
     # get best model config and download it
-    best_model_json = [f for f in files if f['key']==dat.replace('_fullmodel.h5','.json')]
-    outfile = model_direc + os.sep + dat.replace('_fullmodel.h5','.json')
+    best_model_json = [f for f in files if f['key']==filename.replace('_fullmodel.h5','.json')]
+    outfile = model_direc + os.sep + filename.replace('_fullmodel.h5','.json')
     if not os.path.isfile(outfile):
-        print("Downloading file to {}".format(outfile))
+        print("\nDownloading file to {}".format(outfile))
         download_url(best_model_json[0]['links']['self'], outfile)
 
 else:
     # get list of all models
-    all_models = [f for f in files if f['key'].endswith('.h5')]
-
-    # download all weights
-    for a in all_models:
-        outfile = model_direc + os.sep + a['links']['self'].split('/')[-1]
-        if not os.path.isfile(outfile):
-            print("Downloading file to {}".format(outfile))
-            download_url(a['links']['self'], outfile)
-
-    # download all con fig
-    for a in all_models:
-        outfile = model_direc + os.sep + a['links']['self'].split('/')[-1]
-        outfile = outfile.replace('_fullmodel.h5','.json')
-        if not os.path.isfile(outfile):
-            print("Downloading file to {}".format(outfile))
-            download_url(a['links']['self'].replace('_fullmodel.h5','.json'), outfile)
-
-
+    all_models = [f for f in files if f["key"].endswith(".h5")]
+    # print(f"\nModels available : {all_models }")
+    # check if all h5 files in files are in model_direc
+    for model_json in all_models:
+        outfile = (
+            model_direc
+            + os.sep
+            + model_json["links"]["self"].split("/")[-1]
+        )
+        # print(f"\nENSEMBLE: outfile: {outfile}")
+        # path to save file and json data associated with file saved to dict
+        models_json_dict[outfile] = model_json["links"]["self"]
+    # print(f"\nmodels_json_dict: {models_json_dict}")
+    url_dict = get_url_dict_to_download(models_json_dict)
+    print(f"\nURLs to download: {url_dict}")
+    # if any files are not found locally download them asynchronous
+    if url_dict != {}:
+        run_async_download(url_dict)
+    
 ###==============================================
 
 root = Tk()
@@ -391,7 +493,7 @@ if not 'OTSU_THRESHOLD' in locals():
     OTSU_THRESHOLD = False
 
 # Import do_seg() from doodleverse_utils to perform the segmentation on the images
-for f in tqdm(sample_filenames):
+for f in auto_tqdm(sample_filenames):
     try:
         do_seg(f, M, metadatadict, sample_direc,NCLASSES,N_DATA_BANDS,TARGET_SIZE,TESTTIMEAUG, WRITE_MODELMETADATA,OTSU_THRESHOLD)
     except:
