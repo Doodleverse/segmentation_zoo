@@ -38,8 +38,9 @@ def download_url(url, save_path, chunk_size=128):
 
 #### choose zenodo release
 root = Tk()
-choices = ['sat_RGB_4class_6950472', 'sat_5band_4class_6950472', 
-            'sat_NDWI_4class_7352859', 'sat_MNDWI_4class_7352859', 'sat_7band_4class_7358284',
+choices = ['sat_RGB_2class_7384255', 'sat_5band_2class_7388008', 
+            'sat_RGB_4class_6950472', 'sat_5band_4class_7344606', 
+            'sat_NDWI_4class_7352859', 'sat_MNDWI_4class_7352850', 'sat_7band_4class_7358284',
             'aerial_2class_6234122', 'aerial_2class_6235090', 'ortho_2class_6410157']
 
 variable = StringVar(root)
