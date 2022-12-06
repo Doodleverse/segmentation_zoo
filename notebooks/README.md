@@ -43,3 +43,19 @@ One set of models are trained to find wood in aerial imagery of rivers (these ar
 * Part 4: combine models and use to predict on a folder of images
     * we combine the 3 models in such a way that 2 ensembled outputs are created, a) wood only, and b) a 4-class
     * this is done by merging softmax scores for each class, then argmaxing each, then combining into a multiclass output
+
+4. `SDSmodels.ipynb` by Daniel Buscombe
+This notebook walks through loading several models each trained for the same task, making ensemble prediction with an image, and inspecting the outputs
+
+* Part 1: load libraries
+* Part 2: select and load models
+    * we use several models trained for the same task: finding the coastal shoreline
+    * we repurpose a snippet of code from the Gym script `seg_images_in_folder.py` to load in and make each model and apply the model weights from h5 files
+* Part 3: Application of each model for 2-classes
+    * apply all models and aggregate softmax scores for an ensemble model prediction
+    * Otsu (adaptive) thresholding versus normal thresholding
+    * TTA versus no TTA (test-time augmentation)
+* Part 4: Application of each model for 4-classes remapped to 2-classes
+    * apply all models and aggregate softmax scores for an ensemble model prediction
+    * Otsu (adaptive) thresholding versus normal thresholding
+    * TTA versus no TTA (test-time augmentation)
