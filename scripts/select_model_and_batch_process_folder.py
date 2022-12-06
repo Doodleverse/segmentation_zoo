@@ -37,36 +37,48 @@ import requests
 import aiohttp
 import tensorflow as tf
 # specify where imports come from
-from doodleverse_utils.prediction_imports import do_seg
+# from doodleverse_utils.prediction_imports import do_seg
+# Import the architectures for following models from doodleverse_utils
+from doodleverse_utils.model_imports import (
+    simple_resunet,
+    custom_resunet,
+    custom_unet,
+    simple_unet,
+    simple_resunet,
+    simple_satunet,
+)
 
-def sort_files(sample_direc:str)->list:
-    """returns list of sorted filenames in sample_direc
+import os  # , time
 
-    Args:
-        sample_direc (str): full path to directory of imagery/npz
-        to run models on
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import io
 
-    Returns:
-        list: list of sorted filenames in sample_direc
-    """    
-    # prepares data to be predicted
-    sample_filenames = sorted(glob(sample_direc+os.sep+'*.*'))
-    if sample_filenames[0].split('.')[-1]=='npz':
-        sample_filenames = sorted(tf.io.gfile.glob(sample_direc+os.sep+'*.npz'))
-    else:
-        sample_filenames = sorted(tf.io.gfile.glob(sample_direc+os.sep+'*.jpg'))
-        if len(sample_filenames)==0:
-            sample_filenames = sorted(glob(sample_direc+os.sep+'*.png'))
-    return sample_filenames
+# from skimage.filters.rank import median
+# from skimage.morphology import disk
+from tkinter import filedialog
+from tkinter import *
+from tkinter import messagebox
+import json
+from skimage.io import imsave, imread
+from numpy.lib.stride_tricks import as_strided as ast
+from glob import glob
 
-def get_weights_list(model_choice: str,weights_direc:str):
-        """Returns of the weights files(.h5) within weights_direc """
-        if model_choice == 'ENSEMBLE':
-            return glob(weights_direc + os.sep + '*.h5')
-        elif model_choice == 'BEST':
-            with open(weights_direc + os.sep + 'BEST_MODEL.txt')as f:
-                w = f.readlines()
-            return [weights_direc + os.sep + w[0]]
+# from joblib import Parallel, delayed
+# from skimage.morphology import remove_small_holes, remove_small_objects
+# from scipy.ndimage import maximum_filter
+from skimage.transform import resize
+
+# from tqdm import tqdm
+from skimage.filters import threshold_otsu
+import matplotlib.pyplot as plt
+
+import tensorflow as tf  # numerical operations on gpu
+import tensorflow.keras.backend as K
+# from model_functions import get_model
+import model_functions
+
+
 
 def download_ENSEMBLE_model(files:list,model_direc:str)->None:
     """downloads all models from zenodo.
@@ -380,7 +392,7 @@ root.withdraw()
 ####################################
 
 # weights_files : list containing all the weight files fill paths
-weights_files = get_weights_list(model_choice,model_direc)
+weights_files = model_functions.get_weights_list(model_choice,model_direc)
 
 # For each set of weights in weights_files load them in
 M= []; C=[]; T = []
@@ -408,7 +420,8 @@ for counter,weights in enumerate(weights_files):
         #####################################
         #### hardware
         ####################################
-
+        #@todo remove this
+        SET_GPU = -1
         SET_GPU = str(SET_GPU)
 
         if SET_GPU != '-1':
@@ -470,8 +483,8 @@ for counter,weights in enumerate(weights_files):
 
 
     #from imports import *
-    from doodleverse_utils.imports import *
-    from doodleverse_utils.model_imports import *
+    # from doodleverse_utils.imports import *
+    # from doodleverse_utils.model_imports import *
 
     #---------------------------------------------------
 
@@ -481,116 +494,42 @@ for counter,weights in enumerate(weights_files):
     # 2. custom_unet
     # 3. simple_resunet
     # 4. simple_unet
-    # 5. satunet
-    # 6. custom_resunet
-    # 7. custom_satunet
+    # 5. simple_satunet
 
     # Get the selected model based on the weights file's MODEL key provided
     # create the model with the data loaded in from the weights file
-    print('.....................................')
     print('Creating and compiling model {}...'.format(counter))
-
-    if MODEL =='resunet':
-        model =  custom_resunet((TARGET_SIZE[0], TARGET_SIZE[1], N_DATA_BANDS),
-                        FILTERS,
-                        nclasses=NCLASSES, #[NCLASSES+1 if NCLASSES==1 else NCLASSES][0],
-                        kernel_size=(KERNEL,KERNEL),
-                        strides=STRIDE,
-                        dropout=DROPOUT,
-                        dropout_change_per_layer=DROPOUT_CHANGE_PER_LAYER,
-                        dropout_type=DROPOUT_TYPE,
-                        use_dropout_on_upsampling=USE_DROPOUT_ON_UPSAMPLING,
-                        )
-    elif MODEL=='unet':
-        model =  custom_unet((TARGET_SIZE[0], TARGET_SIZE[1], N_DATA_BANDS),
-                        FILTERS,
-                        nclasses=NCLASSES, #[NCLASSES+1 if NCLASSES==1 else NCLASSES][0],
-                        kernel_size=(KERNEL,KERNEL),
-                        strides=STRIDE,
-                        dropout=DROPOUT,
-                        dropout_change_per_layer=DROPOUT_CHANGE_PER_LAYER,
-                        dropout_type=DROPOUT_TYPE,
-                        use_dropout_on_upsampling=USE_DROPOUT_ON_UPSAMPLING,
-                        )
-
-    elif MODEL =='simple_resunet':
-
-        model = simple_resunet((TARGET_SIZE[0], TARGET_SIZE[1], N_DATA_BANDS),
-                    kernel = (2, 2),
-                    num_classes=NCLASSES, #[NCLASSES+1 if NCLASSES==1 else NCLASSES][0],
-                    activation="relu",
-                    use_batch_norm=True,
-                    dropout=DROPOUT,
-                    dropout_change_per_layer=DROPOUT_CHANGE_PER_LAYER,
-                    dropout_type=DROPOUT_TYPE,
-                    use_dropout_on_upsampling=USE_DROPOUT_ON_UPSAMPLING,
-                    filters=FILTERS,
-                    num_layers=4,
-                    strides=(1,1))
-
-    elif MODEL=='simple_unet':
-        model = simple_unet((TARGET_SIZE[0], TARGET_SIZE[1], N_DATA_BANDS),
-                    kernel = (2, 2),
-                    num_classes=NCLASSES, #[NCLASSES+1 if NCLASSES==1 else NCLASSES][0],
-                    activation="relu",
-                    use_batch_norm=True,
-                    dropout=DROPOUT,
-                    dropout_change_per_layer=DROPOUT_CHANGE_PER_LAYER,
-                    dropout_type=DROPOUT_TYPE,
-                    use_dropout_on_upsampling=USE_DROPOUT_ON_UPSAMPLING,
-                    filters=FILTERS,
-                    num_layers=4,
-                    strides=(1,1))
-
-    elif MODEL=='satunet':
-
-        model = custom_satunet((TARGET_SIZE[0], TARGET_SIZE[1], N_DATA_BANDS),
-                    kernel = (2, 2),
-                    num_classes=NCLASSES, #[NCLASSES+1 if NCLASSES==1 else NCLASSES][0],
-                    activation="relu",
-                    use_batch_norm=True,
-                    dropout=DROPOUT,
-                    dropout_change_per_layer=DROPOUT_CHANGE_PER_LAYER,
-                    dropout_type=DROPOUT_TYPE,
-                    use_dropout_on_upsampling=USE_DROPOUT_ON_UPSAMPLING,
-                    filters=FILTERS,
-                    num_layers=4,
-                    strides=(1,1))
-
-    else:
+    try:
+        model, model_list, config_files, model_names = model_functions.get_model(weights_files)
+    except Exception as e:
+        print(e)
         print("Model must be one of 'unet', 'resunet', or 'satunet'")
         sys.exit(2)
 
-    try:
-        # Load in the model from the weights which is the location of the weights file        
-        model = tf.keras.models.load_model(weights)
+    metadatadict = model_functions.get_metadatadict(
+        weights_files, config_files, model_names
+    )
 
-        M.append(model)
-        C.append(configfile)
-        T.append(MODEL)
-        
-    except:
-        # Load the metrics mean_iou, dice_coef from doodleverse_utils
-        # Load in the custom loss function from doodleverse_utils        
-        model.compile(optimizer = 'adam', loss = dice_coef_loss(NCLASSES))#, metrics = [iou_multi(NCLASSES), dice_multi(NCLASSES)])
-
-        model.load_weights(weights)
-
-        M.append(model)
-        C.append(configfile)
-        T.append(MODEL)
-
-# metadatadict contains the model name (T) the config file(C) and the model weights(weights_files)
+config=model_functions.get_config(weights_files)
+TARGET_SIZE = config.get("TARGET_SIZE")
+NCLASSES = config.get("NCLASSES")
+N_DATA_BANDS = config.get("N_DATA_BANDS")
+    
+# model_names = T
+# model_list = M
+# config_files = C
+# metadatadict contains  model name (T), config file(C) and, model weights(weights_files)
 metadatadict = {}
 metadatadict['model_weights'] = weights_files
-metadatadict['config_files'] = C
-metadatadict['model_types'] = T
+metadatadict['config_files'] = config_files
+metadatadict['model_types'] = model_names
+print(f"\n metadatadict:\n {metadatadict}")
 
 #####################################
 # read images
 #####################################
 
-sample_filenames = sort_files(sample_direc)
+sample_filenames = model_functions.sort_files(sample_direc)
 print('Number of samples: %i' % (len(sample_filenames)))
 
 #####################################
@@ -611,11 +550,34 @@ if not 'OTSU_THRESHOLD' in locals():
     print("OTSU_THRESHOLD not found in config file(s). Setting to False")
     OTSU_THRESHOLD = False
 
-# Import do_seg() from doodleverse_utils to perform the segmentation on the images
-for f in auto_tqdm(sample_filenames):
-    try:
-        do_seg(f, M, metadatadict, sample_direc,NCLASSES,N_DATA_BANDS,TARGET_SIZE,TESTTIMEAUG, WRITE_MODELMETADATA,OTSU_THRESHOLD)
-    except:
-        print("{} failed. Check config file, and check the path provided contains valid imagery".format(f))
+print("Do seg")
+print(f"sample_direc: {sample_direc}")
+print(f"M: {M}")
+print(f"NCLASSES: {type(NCLASSES)}")
+print(f"N_DATA_BANDS: {type(N_DATA_BANDS)}")
+print(f"TARGET_SIZE: {type(TARGET_SIZE)}")
+print(f"TESTTIMEAUG: {TESTTIMEAUG}")
+#@todo remove this... just for testing
+WRITE_MODELMETADATA = False
+OTSU_THRESHOLD = False
+print(f"WRITE_MODELMETADATA: {WRITE_MODELMETADATA}")
+print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
+import traceback
+
+
+try:
+    print(f"file: {f}")
+    model_functions.compute_segmentation(
+        TARGET_SIZE,
+        N_DATA_BANDS,
+        NCLASSES,
+        sample_direc,
+        model_list,
+        metadatadict,
+    )
+except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+    print("{} failed. Check config file, and check the path provided contains valid imagery".format(f))
 
 
