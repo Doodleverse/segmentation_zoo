@@ -30,7 +30,7 @@ from glob import glob
 import tqdm
 from tqdm.auto import tqdm as auto_tqdm
 import tqdm.asyncio
-
+import zipfile
 from tkinter import filedialog
 from tkinter import *
 import requests
@@ -38,6 +38,62 @@ import aiohttp
 import tensorflow as tf
 # specify where imports come from
 from doodleverse_utils.prediction_imports import do_seg
+
+def download_zipped_model(dataset_id: str,weights_direc:str,url:str):
+    # Create the directory to hold the downloaded models from Zenodo
+    weights_direc = os.path.join(weights_direc,dataset_id)
+    if not os.path.exists(weights_direc):
+        os.mkdir(weights_direc)
+    # 'rgb.zip' is name of directory containing model online
+    filename='rgb'
+    # outfile: full path to directory containing model files
+    # example: 'c:/model_name/rgb'
+    outfile = weights_direc + os.sep + filename
+    if os.path.exists(outfile):   
+        print(f'\n Found model weights directory: {os.path.abspath(outfile)}')
+    # if model directory does not exist download zipped model from Zenodo
+    if not os.path.exists(outfile):
+        print(f'\n Downloading to model weights directory: {os.path.abspath(outfile)}')
+        zip_file=filename+'.zip'
+        zip_folder = weights_direc + os.sep + zip_file
+        print(f'Retrieving model {url} ...')
+        download_zip(url, zip_folder)
+        print(f'Unzipping model to {weights_direc} ...')
+        with zipfile.ZipFile(zip_folder, 'r') as zip_ref:
+            zip_ref.extractall(weights_direc)
+        print(f'Removing {zip_folder}')
+        os.remove(zip_folder)
+    
+        
+    # set weights dir to sub directory (rgb) containing model files  
+    weights_direc = os.path.join(weights_direc,'rgb')
+                
+    # Ensure all files are unzipped
+    with os.scandir(weights_direc) as it:
+        for entry in it:
+            if entry.name.endswith('.zip'):
+                with zipfile.ZipFile(entry, 'r') as zip_ref:
+                    zip_ref.extractall(weights_direc)
+                os.remove(entry)
+    return weights_direc
+            
+def download_zip(url: str, save_path: str, chunk_size: int = 128):
+        """Downloads the zipped model from the given url to the save_path location.
+        Args:
+            url (str): url to zip directory  to download
+            save_path (str): directory to save model
+            chunk_size (int, optional):  Defaults to 128.
+        """
+        # make an HTTP request within a context manager
+        with requests.get(url, stream=True) as r:
+            # check header to get content length, in bytes
+            total_length = int(r.headers.get("Content-Length"))
+            with open(save_path, 'wb') as fd:
+                with auto_tqdm(total=total_length, unit='B', unit_scale=True,unit_divisor=1024,desc="Downloading Model",initial=0, ascii=True) as pbar:
+                        for chunk in r.iter_content(chunk_size=chunk_size):
+                            fd.write(chunk)
+                            pbar.update(len(chunk))
+
 
 async def fetch(session, url: str, save_path: str):
     model_name = url.split("/")[-1]
@@ -167,66 +223,78 @@ r = requests.get(root_url)
 # get list of all files associated with zenodo id
 js = json.loads(r.text)
 files = js['files']
+zipped_model_list = [f for f in files if f["key"].endswith("rgb.zip")]
+# if no zipped models exist then perform async download 
+if zipped_model_list != []:
+    print("Checking for zipped model")
+    zip_url=zipped_model_list[0]['links']['self']
+    # print(f'zip_url: {zip_url}')
+    weights_direc = os.path.abspath(r'C:\1_USGS\5_Doodleverse\segmentation_zoo\segmentation_zoo\scripts\downloaded_models')
+    # update weights_direc to directory of downloaded models
+    weights_direc =download_zipped_model(dataset_id,weights_direc,zip_url)
+    print(f"Weights directory: {weights_direc}")
+# if no zipped models exist then perform async download 
+elif zipped_model_list == []:
 
-# dictionary to hold urls and full path to save models at
-models_json_dict = {}
+    # dictionary to hold urls and full path to save models at
+    models_json_dict = {}
 
-if model_choice=='BEST':
-    # retrieve best model text file
-    best_model_json = [f for f in files if f["key"] == "BEST_MODEL.txt"][0]
-    best_model_txt_path = model_direc + os.sep + "BEST_MODEL.txt"
-    
-    # if best BEST_MODEL.txt file not exist then download it
-    if not os.path.isfile(best_model_txt_path):
-        download_url(
-            best_model_json["links"]["self"],
-            best_model_txt_path,
-        )
-    
-    # read in that file 
-    with open(best_model_txt_path) as f:
-        filename = f.read()
+    if model_choice=='BEST':
+        # retrieve best model text file
+        best_model_json = [f for f in files if f["key"] == "BEST_MODEL.txt"][0]
+        best_model_txt_path = model_direc + os.sep + "BEST_MODEL.txt"
+        
+        # if best BEST_MODEL.txt file not exist then download it
+        if not os.path.isfile(best_model_txt_path):
+            download_url(
+                best_model_json["links"]["self"],
+                best_model_txt_path,
+            )
+        
+        # read in that file 
+        with open(best_model_txt_path) as f:
+            filename = f.read()
 
-    # check if json and h5 file in BEST_MODEL.txt exist
-    model_json = [f for f in files if f["key"] == filename][0]
-    # path to save model
-    outfile = model_direc + os.sep + filename
-    
-    # path to save file and json data associated with file saved to dict
-    models_json_dict[outfile] = model_json["links"]["self"]
-    url_dict = get_url_dict_to_download(models_json_dict)
-    # if any files are not found locally download them asynchronous
-    if url_dict != {}:
-        run_async_download(url_dict)
-    
-
-    # get best model config and download it
-    best_model_json = [f for f in files if f['key']==filename.replace('_fullmodel.h5','.json')]
-    outfile = model_direc + os.sep + filename.replace('_fullmodel.h5','.json')
-    if not os.path.isfile(outfile):
-        print("\nDownloading file to {}".format(outfile))
-        download_url(best_model_json[0]['links']['self'], outfile)
-
-else:
-    # get list of all models
-    all_models = [f for f in files if f["key"].endswith(".h5")]
-    # print(f"\nModels available : {all_models }")
-    # check if all h5 files in files are in model_direc
-    for model_json in all_models:
-        outfile = (
-            model_direc
-            + os.sep
-            + model_json["links"]["self"].split("/")[-1]
-        )
-        # print(f"\nENSEMBLE: outfile: {outfile}")
+        # check if json and h5 file in BEST_MODEL.txt exist
+        model_json = [f for f in files if f["key"] == filename][0]
+        # path to save model
+        outfile = model_direc + os.sep + filename
+        
         # path to save file and json data associated with file saved to dict
         models_json_dict[outfile] = model_json["links"]["self"]
-    # print(f"\nmodels_json_dict: {models_json_dict}")
-    url_dict = get_url_dict_to_download(models_json_dict)
-    print(f"\nURLs to download: {url_dict}")
-    # if any files are not found locally download them asynchronous
-    if url_dict != {}:
-        run_async_download(url_dict)
+        url_dict = get_url_dict_to_download(models_json_dict)
+        # if any files are not found locally download them asynchronous
+        if url_dict != {}:
+            run_async_download(url_dict)
+        
+
+        # get best model config and download it
+        best_model_json = [f for f in files if f['key']==filename.replace('_fullmodel.h5','.json')]
+        outfile = model_direc + os.sep + filename.replace('_fullmodel.h5','.json')
+        if not os.path.isfile(outfile):
+            print("\nDownloading file to {}".format(outfile))
+            download_url(best_model_json[0]['links']['self'], outfile)
+
+    else:
+        # get list of all models
+        all_models = [f for f in files if f["key"].endswith(".h5")]
+        # print(f"\nModels available : {all_models }")
+        # check if all h5 files in files are in model_direc
+        for model_json in all_models:
+            outfile = (
+                model_direc
+                + os.sep
+                + model_json["links"]["self"].split("/")[-1]
+            )
+            # print(f"\nENSEMBLE: outfile: {outfile}")
+            # path to save file and json data associated with file saved to dict
+            models_json_dict[outfile] = model_json["links"]["self"]
+        # print(f"\nmodels_json_dict: {models_json_dict}")
+        url_dict = get_url_dict_to_download(models_json_dict)
+        print(f"\nURLs to download: {url_dict}")
+        # if any files are not found locally download them asynchronous
+        if url_dict != {}:
+            run_async_download(url_dict)
     
 ###==============================================
 
