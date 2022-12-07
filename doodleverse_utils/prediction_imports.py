@@ -439,6 +439,8 @@ def do_seg(
             K.clear_session()
 
         est_label /= counter + 1
+        # est_label cannot be float16 so convert to float32
+        est_label = est_label.astype('float32')
         est_label = resize(est_label, (w, h))
         if WRITE_MODELMETADATA:
             metadatadict["av_prob_stack"] = est_label
