@@ -106,6 +106,7 @@ def seg_file2tensor_ND(f, TARGET_SIZE):  # , resize):
     GLOBAL INPUTS: TARGET_SIZE
     """
 
+    
     with np.load(f) as data:
         bigimage = data["arr_0"].astype("uint8")
 
@@ -209,6 +210,7 @@ def do_seg1(
                 est_label = est_label + est_label2 + est_label3 + est_label4
                 del est_label2, est_label3, est_label4
 
+            est_label = est_label.astype('float32')
             E0.append(
                 resize(est_label[:, :, 0], (w, h), preserve_range=True, clip=True)
             )
