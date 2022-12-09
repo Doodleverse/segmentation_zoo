@@ -29,6 +29,7 @@ from tkinter import *
 import requests
 from glob import glob
 from tqdm import tqdm
+import traceback
 
 def download_url(url, save_path, chunk_size=128):
     r = requests.get(url, stream=True)
@@ -181,7 +182,6 @@ for counter,weights in enumerate(W):
         ####################################
 
         SET_GPU = str(SET_GPU)
-
         if SET_GPU != '-1':
             USE_GPU = True
             print('Using GPU')
@@ -391,11 +391,14 @@ if not 'OTSU_THRESHOLD' in locals():
     print("OTSU_THRESHOLD not found in config file(s). Setting to False")
     OTSU_THRESHOLD = False
 
+
 # Import do_seg() from doodleverse_utils to perform the segmentation on the images
 for f in tqdm(sample_filenames):
     try:
         do_seg(f, M, metadatadict, sample_direc,NCLASSES,N_DATA_BANDS,TARGET_SIZE,TESTTIMEAUG, WRITE_MODELMETADATA,OTSU_THRESHOLD)
-    except:
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
         print("{} failed. Check config file, and check the path provided contains valid imagery".format(f))
 
 
