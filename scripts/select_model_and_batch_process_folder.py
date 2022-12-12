@@ -134,7 +134,6 @@ for counter,weights in enumerate(weights_files):
         #@todo remove this
         SET_GPU = -1
         SET_GPU = str(SET_GPU)
-
         if SET_GPU != '-1':
             USE_GPU = True
             print('Using GPU')
@@ -261,20 +260,19 @@ if not 'OTSU_THRESHOLD' in locals():
     print("OTSU_THRESHOLD not found in config file(s). Setting to False")
     OTSU_THRESHOLD = False
 
-print("Do seg")
-print(f"sample_direc: {sample_direc}")
-print(f"M: {M}")
-print(f"NCLASSES: {type(NCLASSES)}")
-print(f"N_DATA_BANDS: {type(N_DATA_BANDS)}")
-print(f"TARGET_SIZE: {type(TARGET_SIZE)}")
-print(f"TESTTIMEAUG: {TESTTIMEAUG}")
-#@todo remove this... just for testing
-WRITE_MODELMETADATA = False
-OTSU_THRESHOLD = False
-print(f"WRITE_MODELMETADATA: {WRITE_MODELMETADATA}")
-print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
+# print("Do seg")
+# print(f"sample_direc: {sample_direc}")
+# print(f"M: {M}")
+# print(f"NCLASSES: {type(NCLASSES)}")
+# print(f"N_DATA_BANDS: {type(N_DATA_BANDS)}")
+# print(f"TARGET_SIZE: {type(TARGET_SIZE)}")
+# print(f"TESTTIMEAUG: {TESTTIMEAUG}")
+# #@todo remove this... just for testing
+# WRITE_MODELMETADATA = False
+# OTSU_THRESHOLD = False
+# print(f"WRITE_MODELMETADATA: {WRITE_MODELMETADATA}")
+# print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
 import traceback
-
 
 try:
     print(f"file: {f}")
@@ -290,5 +288,4 @@ except Exception as e:
     print(e)
     print(traceback.format_exc())
     print("{} failed. Check config file, and check the path provided contains valid imagery".format(f))
-
 
