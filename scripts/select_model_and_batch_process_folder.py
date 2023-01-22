@@ -38,10 +38,10 @@ import tensorflow.keras.backend as K
 #### choose zenodo release
 root = Tk()
 choices = [
-    "sat_RGB_2class_7384255",
-    "sat_5band_2class_7388008",
-    "sat_NDWI_4class_7557072",
-    "sat_MNDWI_4class_7557080",
+    "sat_RGB_2class_7448405",
+    "sat_5band_2class_7448390",
+    "sat_NDWI_2class_7557072",
+    "sat_MNDWI_2class_7557080",
     "sat_RGB_4class_6950472",
     "sat_5band_4class_7344606",
     "sat_NDWI_4class_7352859",
