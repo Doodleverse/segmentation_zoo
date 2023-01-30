@@ -93,27 +93,32 @@ You select a model, then select a folder of images to apply it to. It will write
 The set of available models are listed below, by theme and more details may be found on the Models pages of the wiki for [satellite](https://github.com/Doodleverse/segmentation_zoo/wiki/6_Satellite-Models), [aerial](https://github.com/Doodleverse/segmentation_zoo/wiki/4_Aerial-Models), and [orthomosaic](https://github.com/Doodleverse/segmentation_zoo/wiki/5_Orthomosaic-Models) imagery
 
 #### Satellite models
-* "sat_RGB_2class_7448405"
-* "sat_5band_2class_7448390"
-* "sat_NDWI_2class_7557072"
-* "sat_MNDWI_2class_7557080"
-* "sat_RGB_4class_6950472"
-* "sat_5band_4class_7344606"
-* "sat_NDWI_4class_7352859"
-* "sat_MNDWI_4class_7352850"
-* "sat_7band_4class_7358284"
+* "sat_RGB_2class_7448405", 2 class (water, other), RGB satellite imagery
+* "sat_5band_2class_7448390", 2 class (water, other), RGB+NIR+SWIR satellite imagery
+* "sat_NDWI_2class_7557072", 2 class (water, other), NDWI satellite imagery
+* "sat_MNDWI_2class_7557080", 2 class (water, other), MNDWI satellite imagery
+* "sat_RGB_4class_6950472", 4 class (water, whitewater, sediment, other), RGB satellite imagery
+* "sat_5band_4class_7344606", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR satellite imagery
+* "sat_NDWI_4class_7352859", 4 class (water, whitewater, sediment, other), NDWI satellite imagery
+* "sat_MNDWI_4class_7352850", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery
+* "sat_7band_4class_7358284", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR+NDWI+MNDWI satellite imagery
 
 #### Aerial imagery models
-* "aerial_2class_6234122"
-* "aerial_2class_6235090"
+* "aerial_2class_6234122", 2 class (water, other), RGB aerial oblique imagery
+* "aerial_2class_6235090", 2 class (water, other), RGB aerial oblique imagery
 
 #### Orthomosaic / NAIP
-* "ortho_2class_7574784"
-* "ortho_5class_7566992"
+* "ortho_2class_7574784", 2 class (water, other), RGB NAIP/orthomosaic imagery
+* "ortho_5class_7566992", 5 class (water, whitewater, sediment, bare terrain, other terrain), RGB NAIP/orthomosaic imagery
 
 #### Seg2Map models
 * FloodNet models
-   * "floodnet_10class_7566810"
+   * "floodnet_10class_7566810", 768x512 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery
+   * "floodnet_10class_7566810", 1024x768 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery   
+* Chesapeake models (forthcoming)
+* EnviroAtlas models (forthcoming)
+* OpenEarthMap models (forthcoming)
+* DeepGlobe models (forthcoming)
 
 
 ## User guide
