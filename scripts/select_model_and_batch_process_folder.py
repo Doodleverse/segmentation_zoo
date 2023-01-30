@@ -49,7 +49,9 @@ choices = [
     "sat_7band_4class_7358284", 
     "aerial_2class_6234122",
     "aerial_2class_6235090",
-    "ortho_2class_6410157",
+    "ortho_2class_7574784", 
+    "ortho_5class_7566992",
+    "floodnet_10class_7566810"
 ]
 
 variable = StringVar(root)

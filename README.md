@@ -74,6 +74,7 @@ and just ignore any errors.
 
 ## Quick start guide
 
+### Example notebook
 To run the example notebooks, change directory (`cd`) to the `notebooks` directory and launch jupyter using
 
 `jupyter notebook`
@@ -81,6 +82,39 @@ To run the example notebooks, change directory (`cd`) to the `notebooks` directo
 The menu of notebooks can be accessed in the browser at `http://localhost:8888/tree`
 
 You should adapt the workflows shown in these notebooks to your own imagery
+
+### Example python script
+To run the example script, change directory (`cd`) to the `scripts` directory and run the python script using
+
+`python select_model_and_batch_process_folder.py`
+
+You select a model, then select a folder of images to apply it to. It will write output files into a subfolder of the input imagery called 'out'
+
+The set of available models are listed below, by theme and more details may be found on the Models pages of the wiki for [satellite](https://github.com/Doodleverse/segmentation_zoo/wiki/6_Satellite-Models), [aerial](https://github.com/Doodleverse/segmentation_zoo/wiki/4_Aerial-Models), and [orthomosaic](https://github.com/Doodleverse/segmentation_zoo/wiki/5_Orthomosaic-Models) imagery
+
+#### Satellite models
+* "sat_RGB_2class_7448405"
+* "sat_5band_2class_7448390"
+* "sat_NDWI_2class_7557072"
+* "sat_MNDWI_2class_7557080"
+* "sat_RGB_4class_6950472"
+* "sat_5band_4class_7344606"
+* "sat_NDWI_4class_7352859"
+* "sat_MNDWI_4class_7352850"
+* "sat_7band_4class_7358284"
+
+#### Aerial imagery models
+* "aerial_2class_6234122"
+* "aerial_2class_6235090"
+
+#### Orthomosaic / NAIP
+* "ortho_2class_7574784"
+* "ortho_5class_7566992"
+
+#### Seg2Map models
+* FloodNet models
+   * "floodnet_10class_7566810"
+
 
 ## User guide
 
