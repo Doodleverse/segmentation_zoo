@@ -88,11 +88,13 @@ To run the example script, change directory (`cd`) to the `scripts` directory an
 
 `python select_model_and_batch_process_folder.py`
 
-You select a model, then select a folder of images to apply it to. It will write output files into a subfolder of the input imagery called 'out'
+You select a task, then a model, then select a folder of images to apply it to. It will write output files into a subfolder of the input imagery called 'out'
 
-The set of available models are listed below, by theme and more details may be found on the Models pages of the wiki for [satellite](https://github.com/Doodleverse/segmentation_zoo/wiki/6_Satellite-Models), [aerial](https://github.com/Doodleverse/segmentation_zoo/wiki/4_Aerial-Models), and [orthomosaic](https://github.com/Doodleverse/segmentation_zoo/wiki/5_Orthomosaic-Models) imagery
+The set of available tasks.models are listed below, by theme and more details may be found on the Models pages of the wiki for [satellite](https://github.com/Doodleverse/segmentation_zoo/wiki/6_Satellite-Models), [aerial](https://github.com/Doodleverse/segmentation_zoo/wiki/4_Aerial-Models), and [orthomosaic](https://github.com/Doodleverse/segmentation_zoo/wiki/5_Orthomosaic-Models) imagery
 
-#### Satellite models
+#### Task: satellite-derived shoreline location extraction
+
+##### Satellite models
 * "sat_RGB_2class_7448405", 2 class (water, other), RGB satellite imagery
 * "sat_5band_2class_7448390", 2 class (water, other), RGB+NIR+SWIR satellite imagery
 * "sat_NDWI_2class_7557072", 2 class (water, other), NDWI satellite imagery
@@ -103,22 +105,36 @@ The set of available models are listed below, by theme and more details may be f
 * "sat_MNDWI_4class_7352850", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery
 * "sat_7band_4class_7358284", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR+NDWI+MNDWI satellite imagery
 
-#### Aerial imagery models
-* "aerial_2class_6234122", 2 class (water, other), RGB aerial oblique imagery
-* "aerial_2class_6235090", 2 class (water, other), RGB aerial oblique imagery
+#### Task: masking water in aerial images
 
-#### Orthomosaic / NAIP
-* "ortho_2class_7574784", 2 class (water, other), RGB NAIP/orthomosaic imagery
-* "ortho_5class_7566992", 5 class (water, whitewater, sediment, bare terrain, other terrain), RGB NAIP/orthomosaic imagery
+##### Aerial imagery models
+* "aerial_2class_6234122", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
+* "aerial_2class_6235090", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
 
-#### Seg2Map models
+#### Task: coastal landcover classification
+
+##### Orthomosaic / NAIP
+* Coast Train models
+   * "ortho_2class_7574784", 2 class (water, other), 768x768 pixel RGB NAIP/orthomosaic imagery
+   * "ortho_5class_7566992", 5 class (water, whitewater, sediment, bare terrain, other terrain), RGB NAIP/orthomosaic imagery
+   * "orthoCT_8class_7570583", 8 class (water, whitewater, sediment, bare terrain, marsh veg, terrestrial veg, ag., dev.), 768x768 pixel RGB NAIP/orthomosaic imagery
+* Chesapeake models
+   * "chesapeake_7class_7576904", 7 class (water, tree canopy / forest, low vegetation / field, barren land, impervious (other), impervious (road), no data), 512x512 pixel RGB NAIP/orthomosaic imagery
+
+##### NOAA ERI 
+* forthcoming
+
+#### Task: generic landcover classification
+
+##### Seg2Map models
 * FloodNet models
    * "floodnet_10class_7566810", 768x512 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery
    * "floodnet_10class_7566810", 1024x768 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery   
-* Chesapeake models (forthcoming)
+* OpenEarthMap models
+   * "openearthmap_9class_7576894", 512x512  pixel imagery, 9 class (bareland, rangeland, dev., road, tree, water, ag., building, nodata)
+* DeepGlobe models
+   * "deepglobe_7class_7576898", 512x512 pixel imagery, 7 class (urban, ag., rangeland, forest, water, bare, unknown)
 * EnviroAtlas models (forthcoming)
-* OpenEarthMap models (forthcoming)
-* DeepGlobe models (forthcoming)
 
 
 ## User guide

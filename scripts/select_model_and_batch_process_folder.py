@@ -35,9 +35,45 @@ from tkinter import *
 import tensorflow as tf  # numerical operations on gpu
 import tensorflow.keras.backend as K
 
-#### choose zenodo release
+
+#### choose generic task 
 root = Tk()
 choices = [
+    "aerial_watermasking",
+    "satellite_shorelines",
+    "generic_landcover_highres",
+    "coastal_landcover_highres"
+]
+
+variable = StringVar(root)
+variable.set("aerial_watermasking")
+w = OptionMenu(root, variable, *choices)
+w.pack()
+root.mainloop()
+
+task_id = variable.get()
+print("You chose task : {}".format(task_id))
+
+
+#### choose zenodo release
+root = Tk()
+
+if task_id=="aerial_watermasking":
+
+    choices = [
+    "aerial_2class_6234122",
+    "aerial_2class_6235090"
+    ]
+    # add: planecam/merged
+    # add: noaa
+    # add: waynecam
+
+    variable = StringVar(root)
+    variable.set("aerial_2class_6234122")
+
+elif task_id=="satellite_shorelines":
+
+    choices = [
     "sat_RGB_2class_7448405",
     "sat_5band_2class_7448390",
     "sat_NDWI_2class_7557072",
@@ -46,22 +82,47 @@ choices = [
     "sat_5band_4class_7344606",
     "sat_NDWI_4class_7352859",
     "sat_MNDWI_4class_7352850",
-    "sat_7band_4class_7358284", 
-    "aerial_2class_6234122",
-    "aerial_2class_6235090",
-    "ortho_2class_7574784", 
-    "ortho_5class_7566992",
-    "floodnet_10class_7566810"
-]
+    "sat_7band_4class_7358284"
+    ]
 
-variable = StringVar(root)
-variable.set("sat_RGB_4class_6950472")
+    variable = StringVar(root)
+    variable.set("sat_RGB_4class_6950472")
+
+elif task_id=="generic_landcover_highres":
+
+    choices = [
+    "floodnet_10class_7566810",
+    "floodnet_10class_7566797",
+    "openearthmap_9class_7576894",
+    "deepglobe_7class_7576898"
+    ]
+    # add: enviroatlas
+
+    variable = StringVar(root)
+    variable.set("openearthmap_9class_7576894")
+
+elif task_id=="coastal_landcover_highres":
+
+    choices = [
+        "orthoCT_2class_7574784", 
+        "orthoCT_5class_7566992",
+        "orthoCT_8class_7570583",
+        "chesapeake_7class_7576904"
+    ]
+    # add: noaa
+    # add: barrierIslands
+
+    variable = StringVar(root)
+    variable.set("orthoCT_5class_7566992")
+
+
+
 w = OptionMenu(root, variable, *choices)
 w.pack()
 root.mainloop()
 
 dataset_id = variable.get()
-print("Dataset ID : {}".format(dataset_id))
+print("You chose dataset ID : {}".format(dataset_id))
 
 zenodo_id = dataset_id.split("_")[-1]
 print("Zenodo ID : {}".format(zenodo_id))
@@ -70,7 +131,7 @@ print("Zenodo ID : {}".format(zenodo_id))
 root = Tk()
 choices = ["BEST", "ENSEMBLE"]
 variable = StringVar(root)
-variable.set("ENSEMBLE")
+variable.set("BEST")
 w = OptionMenu(root, variable, *choices)
 w.pack()
 root.mainloop()
