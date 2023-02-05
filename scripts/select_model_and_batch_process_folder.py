@@ -94,9 +94,10 @@ elif task_id=="generic_landcover_highres":
     "floodnet_10class_7566810",
     "floodnet_10class_7566797",
     "openearthmap_9class_7576894",
-    "deepglobe_7class_7576898"
+    "deepglobe_7class_7576898",
+    "enviroatlas_6class_7576909"
     ]
-    # add: enviroatlas
+    # add: aaai_buildings
 
     variable = StringVar(root)
     variable.set("openearthmap_9class_7576894")
