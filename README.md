@@ -124,6 +124,18 @@ The set of available tasks.models are listed below, by theme and more details ma
 ##### NOAA ERI 
 * forthcoming
 
+##### Barrier islands: substrates
+* forthcoming
+
+##### Barrier islands: geomorphic category
+* forthcoming
+
+##### Barrier islands: vegetation type
+* forthcoming
+
+##### Barrier islands: vegetation density
+* forthcoming
+
 #### Task: generic landcover classification
 
 ##### Seg2Map models
@@ -134,8 +146,10 @@ The set of available tasks.models are listed below, by theme and more details ma
    * "openearthmap_9class_7576894", 512x512  pixel imagery, 9 class (bareland, rangeland, dev., road, tree, water, ag., building, nodata)
 * DeepGlobe models
    * "deepglobe_7class_7576898", 512x512 pixel imagery, 7 class (urban, ag., rangeland, forest, water, bare, unknown)
-* EnviroAtlas models (forthcoming)
-
+* EnviroAtlas models
+   * "enviroatlas_6class_7576909" 1024x1024 pixel imagery, 6 class (water, impervious, barren, trees, herbaceous, shrubland)
+* AAAI/building models
+   * (forthcoming)
 
 ## User guide
 
