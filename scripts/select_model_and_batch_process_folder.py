@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2022, Marda Science LLC
+# Copyright (c) 2022-2023, Marda Science LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@ import tensorflow.keras.backend as K
 root = Tk()
 choices = [
     "aerial_watermasking",
+    "aerial_landcover",
     "satellite_shorelines",
     "generic_landcover_highres",
     "coastal_landcover_highres"
@@ -65,11 +66,19 @@ if task_id=="aerial_watermasking":
     "aerial_2class_6235090"
     ]
     # add: planecam/merged
-    # add: noaa
     # add: waynecam
 
     variable = StringVar(root)
     variable.set("aerial_2class_6234122")
+
+elif task_id=="aerial_landcover":
+
+    choices = [
+    "noaa_4class_7631354"
+    ]
+
+    variable = StringVar(root)
+    variable.set("noaa_4class_7631354")
 
 elif task_id=="satellite_shorelines":
 
@@ -92,12 +101,14 @@ elif task_id=="generic_landcover_highres":
 
     choices = [
     "floodnet_10class_7566810",
-    "floodnet_10class_7566797",
     "openearthmap_9class_7576894",
     "deepglobe_7class_7576898",
-    "enviroatlas_6class_7576909"
+    "enviroatlas_6class_7576909",
+    "aaai_buildings_7607895",
+    "aaai_floodedbuildings_7622733"
     ]
-    # add: aaai_buildings
+    # add: xbd_buildings (segformer)
+    # "floodnet_10class_7566797", this is the 1024x768 px version
 
     variable = StringVar(root)
     variable.set("openearthmap_9class_7576894")
@@ -110,7 +121,6 @@ elif task_id=="coastal_landcover_highres":
         "orthoCT_8class_7570583",
         "chesapeake_7class_7576904"
     ]
-    # add: noaa
     # add: barrierIslands
 
     variable = StringVar(root)
@@ -207,76 +217,16 @@ for counter, weights in enumerate(weights_files):
     for k in config.keys():
         exec(k + '=config["' + k + '"]')
 
+    print("Using CPU")
     if counter == 0:
-        #####################################
-        #### hardware
-        ####################################
-        if "SET_GPU" in locals():
-            SET_GPU = str(SET_GPU)
-        elif not "SET_GPU" in locals():
-            SET_GPU = "-1"
-        if SET_GPU != "-1":
-            USE_GPU = True
-            print("Using GPU")
-        else:
-            USE_GPU = False
-            print("Using CPU")
+        from doodleverse_utils.prediction_imports import *
 
-        if len(SET_GPU.split(",")) > 1:
-            USE_MULTI_GPU = True
-            print("Using multiple GPUs")
-        else:
-            USE_MULTI_GPU = False
-            if USE_GPU:
-                print("Using single GPU device")
-            else:
-                print("Using single CPU device")
+        if MODEL!='segformer':
+            ### mixed precision
+            from tensorflow.keras import mixed_precision
+            mixed_precision.set_global_policy("mixed_float16")
 
-        # suppress tensorflow warnings
-        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-        if USE_GPU == True:
-            os.environ["CUDA_VISIBLE_DEVICES"] = SET_GPU
-
-            from doodleverse_utils.prediction_imports import *
-            from tensorflow.python.client import device_lib
-
-            physical_devices = tf.config.experimental.list_physical_devices("GPU")
-            print(physical_devices)
-
-            if physical_devices:
-                # Restrict TensorFlow to only use the first GPU
-                try:
-                    tf.config.experimental.set_visible_devices(physical_devices, "GPU")
-                except RuntimeError as e:
-                    # Visible devices must be set at program startup
-                    print(e)
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-            from doodleverse_utils.prediction_imports import *
-            from tensorflow.python.client import device_lib
-
-            physical_devices = tf.config.experimental.list_physical_devices("GPU")
-            print(physical_devices)
-
-        ### mixed precision
-        from tensorflow.keras import mixed_precision
-
-        mixed_precision.set_global_policy("mixed_float16")
-        # tf.debugging.set_log_device_placement(True)
-
-        for i in physical_devices:
-            tf.config.experimental.set_memory_growth(i, True)
         print(tf.config.get_visible_devices())
-
-        if USE_MULTI_GPU:
-            # Create a MirroredStrategy.
-            strategy = tf.distribute.MirroredStrategy(
-                [p.name.split("/physical_device:")[-1] for p in physical_devices],
-                cross_device_ops=tf.distribute.HierarchicalCopyAllReduce(),
-            )
-            print("Number of distributed devices: {}".format(strategy.num_replicas_in_sync))
 
     # Get the selected model based on the weights file's MODEL key provided
     # create the model with the data loaded in from the weights file

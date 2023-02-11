@@ -12,6 +12,10 @@ import tqdm.asyncio
 import zipfile
 import requests
 import aiohttp
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import tensorflow as tf
 from doodleverse_utils.prediction_imports import do_seg
 from doodleverse_utils.model_imports import dice_coef_loss
