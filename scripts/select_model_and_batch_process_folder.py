@@ -285,7 +285,7 @@ for counter, weights in enumerate(weights_files):
         model, model_list, config_files, model_names = model_functions.get_model(weights_files)
     except Exception as e:
         print(e)
-        print("Model must be one of 'unet', 'resunet', or 'satunet'")
+        print("Model must be one of 'unet', 'resunet', 'segformer', or 'satunet'")
         sys.exit(2)
 
     # get dictionary containing all files needed to run models on data
@@ -341,6 +341,7 @@ try:
         TARGET_SIZE,
         N_DATA_BANDS,
         NCLASSES,
+        MODEL,
         sample_direc,
         model_list,
         metadatadict,

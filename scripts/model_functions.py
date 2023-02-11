@@ -24,6 +24,7 @@ from doodleverse_utils.model_imports import (
     simple_unet,
     simple_resunet,
     simple_satunet,
+    segformer
 )
 
 
@@ -511,13 +512,20 @@ def get_model(weights_list: list):
                     num_layers=4,
                     strides=(1, 1),
                 )
+            elif MODEL=='segformer':
+                id2label = {}
+                for k in range(NCLASSES):
+                    id2label[k]=str(k)
+                model = segformer(id2label,num_classes=NCLASSES)
+                model.compile(optimizer='adam')
             else:
                 raise Exception(f"An unknown model type {MODEL} was received. Please select a valid model.")
             # Load in custom loss function from doodleverse_utils
             # Load metrics mean_iou, dice_coef from doodleverse_utils
-            model.compile(
-                optimizer="adam", loss=dice_coef_loss(NCLASSES)
-            )  # , metrics = [iou_multi(NCLASSES), dice_multi(NCLASSES)])
+            if MODEL!='segformer':
+                model.compile(
+                    optimizer="adam", loss=dice_coef_loss(NCLASSES)
+                )  # , metrics = [iou_multi(NCLASSES), dice_multi(NCLASSES)])
             model.load_weights(weights)
 
         model_names.append(MODEL)
@@ -551,6 +559,7 @@ def compute_segmentation(
     TARGET_SIZE: tuple,
     N_DATA_BANDS: int,
     NCLASSES: int,
+    MODEL,
     sample_direc: str,
     model_list: list,
     metadatadict: dict,
@@ -579,6 +588,7 @@ def compute_segmentation(
             file_to_seg,
             model_list,
             metadatadict,
+            MODEL,
             sample_direc=sample_direc,
             NCLASSES=NCLASSES,
             N_DATA_BANDS=N_DATA_BANDS,
