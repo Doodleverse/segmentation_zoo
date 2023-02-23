@@ -72,18 +72,7 @@ and just ignore any errors.
 3. Contributor of implementation workflows
    - We welcome contributions of Gym model implementations! The basic steps (to be outlined in the wiki) involve a) cloning the Zoo repo and adding a notebook or script showing your workflow; and b) issuing a pull request for review by Doodleverse HQ
 
-## Quick start guide
-
-### Example notebook
-To run the example notebooks, change directory (`cd`) to the `notebooks` directory and launch jupyter using
-
-`jupyter notebook`
-
-The menu of notebooks can be accessed in the browser at `http://localhost:8888/tree`
-
-You should adapt the workflows shown in these notebooks to your own imagery
-
-### Example python script
+## Example python script
 To run the example script, change directory (`cd`) to the `scripts` directory and run the python script using
 
 `python select_model_and_batch_process_folder.py`
@@ -92,28 +81,35 @@ You select a task, then a model, then select a folder of images to apply it to. 
 
 The set of available tasks.models are listed below, by theme and more details may be found on the Models pages of the wiki for [satellite](https://github.com/Doodleverse/segmentation_zoo/wiki/6_Satellite-Models), [aerial](https://github.com/Doodleverse/segmentation_zoo/wiki/4_Aerial-Models), and [orthomosaic](https://github.com/Doodleverse/segmentation_zoo/wiki/5_Orthomosaic-Models) imagery
 
-#### Task: satellite-derived shoreline location extraction
+### Task: satellite-derived shoreline location extraction
 
-##### Satellite models
-* "sat_RGB_2class_7448405", 2 class (water, other), RGB satellite imagery
-* "sat_5band_2class_7448390", 2 class (water, other), RGB+NIR+SWIR satellite imagery
-* "sat_NDWI_2class_7557072", 2 class (water, other), NDWI satellite imagery
-* "sat_MNDWI_2class_7557080", 2 class (water, other), MNDWI satellite imagery
-* "sat_RGB_4class_6950472", 4 class (water, whitewater, sediment, other), RGB satellite imagery
-* "sat_5band_4class_7344606", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR satellite imagery
-* "sat_NDWI_4class_7352859", 4 class (water, whitewater, sediment, other), NDWI satellite imagery
-* "sat_MNDWI_4class_7352850", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery
-* "sat_7band_4class_7358284", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR+NDWI+MNDWI satellite imagery
+* 2-class models
+   * "sat_RGB_2class_7448405", 2 class (water, other), RGB satellite imagery
+   * "sat_5band_2class_7448390", 2 class (water, other), RGB+NIR+SWIR satellite imagery
+   * "sat_NDWI_2class_7557072", 2 class (water, other), NDWI satellite imagery
+   * "sat_MNDWI_2class_7557080", 2 class (water, other), MNDWI satellite imagery
+* 4-class models
+   * "sat_RGB_4class_6950472", 4 class (water, whitewater, sediment, other), RGB satellite imagery
+   * "sat_5band_4class_7344606", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR satellite imagery
+   * "sat_NDWI_4class_7352859", 4 class (water, whitewater, sediment, other), NDWI satellite imagery
+   * "sat_MNDWI_4class_7352850", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery
+   * "sat_7band_4class_7358284", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR+NDWI+MNDWI satellite imagery
 
-#### Task: masking water in aerial images
+### Task: masking water in aerial images
 
-##### Aerial imagery models
 * "aerial_2class_6234122", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
 * "aerial_2class_6235090", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
 
-#### Task: coastal landcover classification
+### Task: generic classification of aerial images
 
-##### Orthomosaic / NAIP
+* NOAA models
+   * "noaa_4class_7631354", 4 class (water, sediment, vegetation, developed), RGB aerial oblique imagery, 1024x768 pixel imagery
+* FloodNet models
+   * "floodnet_10class_7566810", 768x512 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery
+   * "floodnet_10class_7566810", 1024x768 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery   
+
+### Task: coastal landcover classification in Orthomosaic / NAIP (Seg2Map)
+
 * Coast Train models
    * "ortho_2class_7574784", 2 class (water, other), 768x768 pixel RGB NAIP/orthomosaic imagery
    * "ortho_5class_7566992", 5 class (water, whitewater, sediment, bare terrain, other terrain), RGB NAIP/orthomosaic imagery
@@ -121,27 +117,15 @@ The set of available tasks.models are listed below, by theme and more details ma
 * Chesapeake models
    * "chesapeake_7class_7576904", 7 class (water, tree canopy / forest, low vegetation / field, barren land, impervious (other), impervious (road), no data), 512x512 pixel RGB NAIP/orthomosaic imagery
 
-##### NOAA ERI 
-* forthcoming
+* Barrier islands models
+   * Barrier islands: substrates (forthcoming)
+   * Barrier islands: geomorphic category (forthcoming)
+   * Barrier islands: vegetation type (forthcoming)
+   * Barrier islands: vegetation density (forthcoming)
+   * Barrier islands: general classification (forthcoming)
 
-##### Barrier islands: substrates
-* forthcoming
+### Task: generic landcover classification (Seg2Map)
 
-##### Barrier islands: geomorphic category
-* forthcoming
-
-##### Barrier islands: vegetation type
-* forthcoming
-
-##### Barrier islands: vegetation density
-* forthcoming
-
-#### Task: generic landcover classification
-
-##### Seg2Map models
-* FloodNet models
-   * "floodnet_10class_7566810", 768x512 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery
-   * "floodnet_10class_7566810", 1024x768 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery   
 * OpenEarthMap models
    * "openearthmap_9class_7576894", 512x512  pixel imagery, 9 class (bareland, rangeland, dev., road, tree, water, ag., building, nodata)
 * DeepGlobe models
@@ -149,7 +133,20 @@ The set of available tasks.models are listed below, by theme and more details ma
 * EnviroAtlas models
    * "enviroatlas_6class_7576909" 1024x1024 pixel imagery, 6 class (water, impervious, barren, trees, herbaceous, shrubland)
 * AAAI/building models
-   * (forthcoming)
+   * "aaai_building_7607895" 1024x1024 pixel imagery, 2 class (building, other)
+   * "aaai_floodbuilding_7622733" 1024x1024 pixel imagery, 2 class (flooded building, other)
+* XBD/building models
+   * "xbd_building_7613212" 768x768 pixel imagery, 2 class (building, other) 
+   * "xbd_damagedbuilding_7613175" 768x768 pixel imagery, 4 class (building/no-damage, building/minor-damage, building/major-damage, other)    
+   
+## Example notebook
+To run the example notebooks, change directory (`cd`) to the `notebooks` directory and launch jupyter using
+
+`jupyter notebook`
+
+The menu of notebooks can be accessed in the browser at `http://localhost:8888/tree`
+
+You should adapt the workflows shown in these notebooks to your own imagery
 
 ## User guide
 
