@@ -74,6 +74,7 @@ if task_id=="aerial_watermasking":
 elif task_id=="aerial_landcover":
 
     choices = [
+    "floodnet_10class_7566810",
     "noaa_4class_7631354"
     ]
 
@@ -100,14 +101,14 @@ elif task_id=="satellite_shorelines":
 elif task_id=="generic_landcover_highres":
 
     choices = [
-    "floodnet_10class_7566810",
     "openearthmap_9class_7576894",
     "deepglobe_7class_7576898",
     "enviroatlas_6class_7576909",
-    "aaai_buildings_7607895",
-    "aaai_floodedbuildings_7622733"
+    "aaai_building_7607895",
+    "aaai_floodedbuildings_7622733",
+    "xbd_building_7613212",
+    "xbd_damagedbuilding_7613175"
     ]
-    # add: xbd_buildings (segformer)
     # "floodnet_10class_7566797", this is the 1024x768 px version
 
     variable = StringVar(root)
