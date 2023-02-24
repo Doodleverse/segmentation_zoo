@@ -28,7 +28,7 @@ from doodleverse_utils.model_imports import (
     simple_unet,
     simple_resunet,
     simple_satunet,
-    segformer
+    # segformer
 )
 
 
@@ -282,10 +282,11 @@ def download_BEST_model(files: list, model_direc: str) -> None:
 
     # read in BEST_MODEL.txt file
     with open(best_model_txt_path) as f:
-        best_model_filename = f.read()
+        best_model_filename = f.read().strip()
+
     print(f"Best Model filename: {best_model_filename}")
     # check if json and h5 file in BEST_MODEL.txt exist
-    model_json = [f for f in files if f["key"] == best_model_filename]
+    model_json = [f for f in files if f["key"].strip() == best_model_filename]
     if model_json == []:
         FILE_NOT_ONLINE_ERROR = f"File {best_model_filename} not found online. Raise an issue on Github"
         raise FileNotFoundError(FILE_NOT_ONLINE_ERROR)
