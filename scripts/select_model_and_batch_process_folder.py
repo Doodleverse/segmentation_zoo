@@ -204,14 +204,14 @@ for counter, weights in enumerate(weights_files):
     try:
         # "fullmodel" is for serving on zoo they are smaller and more portable between systems than traditional h5 files
         # gym makes a h5 file, then you use gym to make a "fullmodel" version then zoo can read "fullmodel" version
-        configfile = weights.replace("_fullmodel.h5", ".json").replace("weights", "config")
-        with open(configfile) as f:
-            config = json.load(f)
+        configfile = weights.replace("_fullmodel.h5", ".json").replace("weights", "config").strip()
+        with open(configfile) as file:
+            config = json.load(file)
     except:
         # Turn the .h5 file into a json so that the data can be loaded into dynamic variables
-        configfile = weights.replace(".h5", ".json").replace("weights", "config")
-        with open(configfile) as f:
-            config = json.load(f)
+        configfile = weights.replace(".h5", ".json").replace("weights", "config").strip()
+        with open(configfile) as file:
+            config = json.load(file)
     # Dynamically creates all variables from config dict.
     # For example configs's {'TARGET_SIZE': [768, 768]} will be created as TARGET_SIZE=[768, 768]
     # This is how the program is able to use variables that have never been explicitly defined
@@ -236,6 +236,7 @@ for counter, weights in enumerate(weights_files):
         model, model_list, config_files, model_names = model_functions.get_model(weights_files)
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
         print("Model must be one of 'unet', 'resunet', 'segformer', or 'satunet'")
         sys.exit(2)
 
@@ -287,7 +288,7 @@ print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
 
 # run models on imagery
 try:
-    print(f"file: {f}")
+    print(f"file: {file}")
     model_functions.compute_segmentation(
         TARGET_SIZE,
         N_DATA_BANDS,
@@ -300,4 +301,4 @@ try:
 except Exception as e:
     print(e)
     print(traceback.format_exc())
-    print("{} failed. Check config file, and check the path provided contains valid imagery".format(f))
+    print(f"{file} failed. Check config file, and check the path provided contains valid imagery")

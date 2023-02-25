@@ -271,7 +271,7 @@ def download_BEST_model(files: list, model_direc: str) -> None:
     # dictionary to hold urls and full path to save models at
     models_json_dict = {}
     # retrieve best model text file
-    best_model_json = [f for f in files if f["key"] == "BEST_MODEL.txt"][0]
+    best_model_json = [f for f in files if f["key"].strip() == "BEST_MODEL.txt"][0]
     best_model_txt_path = os.path.join(model_direc, "BEST_MODEL.txt")
     # if BEST_MODEL.txt file not exist download it
     if not os.path.isfile(best_model_txt_path):
@@ -369,10 +369,10 @@ def get_config(weights_list: list) -> dict:
         dict: contents of config json files that have same name of h5 files in weights_list
     """
     weights_file = weights_list[0]
-    configfile = weights_file.replace(".h5", ".json").replace("weights", "config")
+    configfile = weights_file.replace(".h5", ".json").replace("weights", "config").strip()
     if "fullmodel" in configfile:
-        configfile = configfile.replace("_fullmodel", "")
-    with open(configfile) as f:
+        configfile = configfile.replace("_fullmodel", "").strip()
+    with open(configfile.strip()) as f:
         config = json.load(f)
     return config
 
@@ -400,9 +400,9 @@ def get_model(weights_list: list):
     for weights in weights_list:
         # "fullmodel" is for serving on zoo they are smaller and more portable between systems than traditional h5 files
         # gym makes a h5 file, then you use gym to make a "fullmodel" version then zoo can read "fullmodel" version
-        configfile = weights.replace(".h5", ".json").replace("weights", "config")
+        configfile = weights.replace(".h5", ".json").replace("weights", "config").strip()
         if "fullmodel" in configfile:
-            configfile = configfile.replace("_fullmodel", "")
+            configfile = configfile.replace("_fullmodel", "").strip()
         with open(configfile) as f:
             config = json.load(f)
         TARGET_SIZE = config.get("TARGET_SIZE")
@@ -531,6 +531,7 @@ def get_model(weights_list: list):
                 model.compile(
                     optimizer="adam", loss=dice_coef_loss(NCLASSES)
                 )  # , metrics = [iou_multi(NCLASSES), dice_multi(NCLASSES)])
+            weights=weights.strip()
             model.load_weights(weights)
 
         model_names.append(MODEL)
@@ -587,6 +588,7 @@ def compute_segmentation(
     WRITE_MODELMETADATA = False
     # Read in the image filenames as either .npz,.jpg, or .png
     files_to_segment = sort_files(sample_direc)
+    sample_direc=os.path.abspath(sample_direc)
     # Compute the segmentation for each of the files
     for file_to_seg in tqdm.auto.tqdm(files_to_segment):
         do_seg(
