@@ -119,8 +119,11 @@ elif task_id=="coastal_landcover_highres":
     choices = [
         "orthoCT_2class_7574784", 
         "orthoCT_5class_7566992",
+        "orthoCT_5class_segformer_7641708",
         "orthoCT_8class_7570583",
-        "chesapeake_7class_7576904"
+        "orthoCT_8class_segformer_7641724",
+        "chesapeake_7class_7576904",
+        "chesapeake_7class_segformer_7677506"
     ]
     # add: barrierIslands
 
@@ -276,7 +279,7 @@ if not "TESTTIMEAUG" in locals():
 
 if not "WRITE_MODELMETADATA" in locals():
     print("WRITE_MODELMETADATA not found in config file(s). Setting to False")
-    WRITE_MODELMETADATA = False
+    WRITE_MODELMETADATA = True
 if not "OTSU_THRESHOLD" in locals():
     print("OTSU_THRESHOLD not found in config file(s). Setting to False")
     OTSU_THRESHOLD = False

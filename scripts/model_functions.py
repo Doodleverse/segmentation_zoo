@@ -28,7 +28,7 @@ from doodleverse_utils.model_imports import (
     simple_unet,
     simple_resunet,
     simple_satunet,
-    # segformer
+    segformer
 )
 
 
