@@ -62,6 +62,7 @@ root = Tk()
 if task_id=="aerial_watermasking":
 
     choices = [
+    "noaa_2class_7604083",
     "aerial_2class_6234122",
     "aerial_2class_6235090"
     ]
