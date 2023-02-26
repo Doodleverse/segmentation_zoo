@@ -99,6 +99,7 @@ The set of available tasks.models are listed below, by theme and more details ma
 
 * "aerial_2class_6234122", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
 * "aerial_2class_6235090", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
+* "noaa_2class_7604083", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel NOAA ERI imagery
 
 ### Task: generic classification of aerial images
 
