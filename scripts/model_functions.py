@@ -30,6 +30,7 @@ from doodleverse_utils.model_imports import (
     simple_satunet,
     segformer
 )
+from joblib import Parallel, delayed
 
 
 def get_model_dir(parent_directory: str, dir_name: str) -> str:
@@ -522,15 +523,15 @@ def get_model(weights_list: list):
                 for k in range(NCLASSES):
                     id2label[k]=str(k)
                 model = segformer(id2label,num_classes=NCLASSES)
-                model.compile(optimizer='adam')
+                # model.compile(optimizer='adam')
             else:
                 raise Exception(f"An unknown model type {MODEL} was received. Please select a valid model.")
             # Load in custom loss function from doodleverse_utils
             # Load metrics mean_iou, dice_coef from doodleverse_utils
-            if MODEL!='segformer':
-                model.compile(
-                    optimizer="adam", loss=dice_coef_loss(NCLASSES)
-                )  # , metrics = [iou_multi(NCLASSES), dice_multi(NCLASSES)])
+            # if MODEL!='segformer':
+            #     model.compile(
+            #         optimizer="adam", loss=dice_coef_loss(NCLASSES)
+            #     )  # , metrics = [iou_multi(NCLASSES), dice_multi(NCLASSES)])
             weights=weights.strip()
             model.load_weights(weights)
 
@@ -560,6 +561,7 @@ def sort_files(sample_direc: str) -> list:
             sample_filenames = sorted(glob(sample_direc + os.sep + "*.png"))
     return sample_filenames
 
+# =========================================================
 
 def compute_segmentation(
     TARGET_SIZE: tuple,
@@ -569,6 +571,7 @@ def compute_segmentation(
     sample_direc: str,
     model_list: list,
     metadatadict: dict,
+    do_parallel: bool
 ) -> None:
     """applies models in model_list to directory of imagery in sample_direc.
     imagery will be resized to TARGET_SIZE and should contain number of bands specified by
@@ -586,21 +589,32 @@ def compute_segmentation(
     if "TESTTIMEAUG" not in locals():
         TESTTIMEAUG = False
     WRITE_MODELMETADATA = False
+    OTSU_THRESHOLD=False
+
     # Read in the image filenames as either .npz,.jpg, or .png
     files_to_segment = sort_files(sample_direc)
     sample_direc=os.path.abspath(sample_direc)
     # Compute the segmentation for each of the files
-    for file_to_seg in tqdm.auto.tqdm(files_to_segment):
-        do_seg(
-            file_to_seg,
-            model_list,
-            metadatadict,
-            MODEL,
-            sample_direc=sample_direc,
-            NCLASSES=NCLASSES,
-            N_DATA_BANDS=N_DATA_BANDS,
-            TARGET_SIZE=TARGET_SIZE,
-            TESTTIMEAUG=TESTTIMEAUG,
-            WRITE_MODELMETADATA=WRITE_MODELMETADATA,
-            OTSU_THRESHOLD=False,
-        )
+
+    if do_parallel:
+
+        from joblib import Parallel, delayed
+
+        w = Parallel(n_jobs=-1, verbose=1)(delayed(do_seg(file_to_seg, model_list, metadatadict, MODEL, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA, OTSU_THRESHOLD)) for file_to_seg in files_to_segment)
+
+    else:
+
+        for file_to_seg in tqdm.auto.tqdm(files_to_segment):
+            do_seg(
+                file_to_seg,
+                model_list,
+                metadatadict,
+                MODEL,
+                sample_direc=sample_direc,
+                NCLASSES=NCLASSES,
+                N_DATA_BANDS=N_DATA_BANDS,
+                TARGET_SIZE=TARGET_SIZE,
+                TESTTIMEAUG=TESTTIMEAUG,
+                WRITE_MODELMETADATA=WRITE_MODELMETADATA,
+                OTSU_THRESHOLD=OTSU_THRESHOLD,
+            )
