@@ -571,7 +571,8 @@ def compute_segmentation(
     sample_direc: str,
     model_list: list,
     metadatadict: dict,
-    do_parallel: bool
+    do_parallel: bool,
+    profile: str
 ) -> None:
     """applies models in model_list to directory of imagery in sample_direc.
     imagery will be resized to TARGET_SIZE and should contain number of bands specified by
@@ -600,7 +601,9 @@ def compute_segmentation(
 
         from joblib import Parallel, delayed
 
-        w = Parallel(n_jobs=-1, verbose=1)(delayed(do_seg(file_to_seg, model_list, metadatadict, MODEL, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA, OTSU_THRESHOLD)) for file_to_seg in files_to_segment)
+        w = Parallel(n_jobs=-1, verbose=1)(
+            delayed(do_seg(file_to_seg, model_list, metadatadict, MODEL, sample_direc, NCLASSES, N_DATA_BANDS, TARGET_SIZE, TESTTIMEAUG, WRITE_MODELMETADATA, OTSU_THRESHOLD, profile))() 
+            for file_to_seg in files_to_segment)
 
     else:
 
@@ -617,4 +620,5 @@ def compute_segmentation(
                 TESTTIMEAUG=TESTTIMEAUG,
                 WRITE_MODELMETADATA=WRITE_MODELMETADATA,
                 OTSU_THRESHOLD=OTSU_THRESHOLD,
+                profile=profile
             )

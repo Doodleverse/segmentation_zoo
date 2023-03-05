@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2022-2023, Marda Science LLC
+# Copyright (c) 2023, Marda Science LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +22,21 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
 # standard imports
-import sys, os, json
-import traceback
+from tkinter import filedialog
+from tkinter import *
+import sys, os, shutil
+from glob import glob
 
 # local imports
 import model_functions
 
-# external imports
-from tkinter import filedialog
-from tkinter import *
+## geospatial imports
+from osgeo import gdal
+gdal.SetCacheMax(2**30) # max out the cache
+
+## tf imports
 import tensorflow as tf  
 import tensorflow.keras.backend as K
 
@@ -44,6 +49,7 @@ profile = 'meta' ## predseg + meta
 
 if do_parallel:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 
 if __name__ == "__main__":
         
@@ -163,6 +169,7 @@ if __name__ == "__main__":
     model_choice = variable.get()
     print("Model implementation choice : {}".format(model_choice))
 
+
     ####======================================
 
     # segmentation zoo directory
@@ -194,15 +201,107 @@ if __name__ == "__main__":
 
     ###==============================================
 
+
+    ###############################################
+    ################# INPUTS
+    ### user inputs
+    ### im using the OEM model for thsi example, which is for 512x512 pixel tiles
+    TARGET_SIZE = 768
+    ### chop up image ortho into tiles with 50% overlap
+    # OVERLAP_PX = TARGET_SIZE//2
+    # image_ortho = '/home/marda/Downloads/seg2map_test/image_mosaic/merged_multispectral_clipped.jpg'
+    resampleAlg = 'mode'
+
+    # Request the orthomosaic geotiff file
     root = Tk()
-    root.filename = filedialog.askdirectory(title="Select directory of images (or npzs) to segment")
-    sample_direc = root.filename
-    print(sample_direc)
+    root.filename =  filedialog.askopenfilename(title = "Select orthomosaic file",filetypes = (("geotff file","*.tif"),("jpeg file (with xml and/or wld)","*.jpg"),("all files","*.*")))
+    image_ortho = root.filename
+    print(image_ortho)
     root.withdraw()
 
-    #####################################
-    #### concatenate models
-    ####################################
+    # resampleAlg = 'mode' 
+    ## alternatives = # 'nearest', 'max', 'min', 'average', 'gauss'
+
+    #### choose resampleAlg 
+    # root = Tk()
+    # choices = [
+    #     "nearest",
+    #     "mode",
+    #     "min",
+    #     "max",
+    #     "average",
+    #     "gauss"
+    # ]
+
+    # variable = StringVar(root)
+    # variable.set("mode")
+    # w = OptionMenu(root, variable, *choices)
+    # w.pack()
+    # root.mainloop()
+
+    # resampleAlg = variable.get()
+    # print("You chose resample algorithm : {}".format(resampleAlg))
+
+    # #### choose tile size 
+    # root = Tk()
+    # choices = [
+    #     "512",
+    #     "768",
+    #     "1024",
+    # ]
+
+    # variable = StringVar(root)
+    # variable.set("512")
+    # w = OptionMenu(root, variable, *choices)
+    # w.pack()
+    # root.mainloop()
+
+    # TARGET_SIZE = int(variable.get())
+    # print("You chose tile size : {} px".format(TARGET_SIZE))
+
+    OVERLAP_PX = TARGET_SIZE//2
+    print("Overlap size : {} px".format(OVERLAP_PX))
+
+    ###############################################
+    ################# ORTHO TILES
+    ### make ortho tiles with overlap from the mosaic image
+
+    indir = os.path.dirname(image_ortho)
+    outdir = indir+os.sep+'tiles'
+    # outdir = indir+os.sep+'tiles_copy'
+
+    try:
+        os.mkdir(outdir)
+    except:
+        pass
+
+    ### chop up image ortho into tiles with 50% overlap
+
+    ## it would be cleaner if the gdal_retile.py script could be wrapped in gdal/osgeo python, but it errored for me ...
+    cmd = 'gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+    os.system(cmd)
+
+    ### convert to jpegs for Zoo model
+    kwargs = {
+        'format': 'JPEG',
+        'outputType': gdal.GDT_Byte
+    }
+
+    def gdal_translate_jpeg(f, kwargs):
+        ds = gdal.Translate(f.replace('.tif','.jpg'), f, **kwargs)
+        ds = None # close and save ds
+
+    for f in glob(outdir+os.sep+'*.tif'):
+        gdal_translate_jpeg(f, kwargs)
+
+    ## delete tif files
+    [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
+
+
+    ### this is where codes would go to apply Zoo model
+    ### (I just did this using Zoo/scripts/select_model_)
+
+    sample_direc = outdir
 
     # weights_files : list containing all the weight files fill paths
     weights_files = model_functions.get_weights_list(model_choice, model_direc)
@@ -316,3 +415,69 @@ if __name__ == "__main__":
         print(e)
         print(traceback.format_exc())
         print(f"{file} failed. Check config file, and check the path provided contains valid imagery")
+
+
+    ### now, you have the 'out' folder ...
+
+    ## the out folder contains a bunch of crap we dont want. let's delete those files
+
+    # "prob.png" files ...
+    [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*prob.png')]
+
+    # "overlay.png" files ...
+    [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*overlay.png')]
+
+    ###############################################
+    ################# LABEL ORTHO CREATION PREP
+
+    ### the trick here is to make asure all the png files and xml files are
+    ### in the same directoy and have the same filename root
+
+    # Get imgs list
+    imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*.png')))
+
+    ## copy the xml files into the 'out' folder
+    xml_files = sorted(glob(os.path.join(outdir, '*.xml')))
+
+    for k in xml_files:
+        shutil.copyfile(k,k.replace(outdir,outdir+os.sep+'out'))
+
+    ## rename pngs
+    for k in imgsToMosaic:
+        os.rename(k,k.replace('_predseg',''))
+
+    xml_files = sorted(glob(os.path.join(outdir,'out', '*.xml')))
+    ## rename xmls
+    for k in xml_files:
+        os.rename(k, k.replace('.jpg.aux.xml', '.png.aux.xml'))
+
+    ###############################################
+    ################# LABEL ORTHO CREATION 
+    ### let's stitch the label "predseg" pngs!
+
+    # make some output paths
+    outVRT = os.path.join(indir, 'Mosaic.vrt')
+    outTIF = os.path.join(indir, 'Mosaic.tif')
+    outJPG = os.path.join(indir, 'Mosaic.jpg')
+
+    ## now we have pngs and png.xml files with the same names in the same folder
+    imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*.png')))
+    print('{} images to mosaic'.format(len(imgsToMosaic)))
+
+    # First build vrt for geotiff output
+    vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg)
+    ds = gdal.BuildVRT(outVRT, imgsToMosaic, options=vrt_options)
+    ds.FlushCache()
+    ds = None
+
+    # then build tiff
+    ds = gdal.Translate(destName=outTIF, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=outVRT)
+    ds.FlushCache()
+    ds = None
+
+    # # now build jpeg (optional)
+    # ds = gdal.Translate(destName=outJPG, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=JPG", "TILED=YES", "TFW=YES", "QUALITY=100"], srcDS=outVRT)
+    # ds.FlushCache()
+    # ds = None
+
+
