@@ -75,7 +75,8 @@ if __name__ == "__main__":
         choices = [
         "noaa_oblique_2class_7604083",
         "aerial_oblique_2class_7604075",
-        "aerial_nadir_2class_7604077"
+        "aerial_nadir_2class_7604077",
+        "pcmsc_wm_v2_7700430"
         ]
 
         variable = StringVar(root)
