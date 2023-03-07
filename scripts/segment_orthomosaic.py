@@ -26,7 +26,7 @@
 # standard imports
 from tkinter import filedialog
 from tkinter import *
-import sys, os, shutil
+import sys, os, shutil, json
 from glob import glob
 
 # local imports
@@ -39,6 +39,13 @@ gdal.SetCacheMax(2**30) # max out the cache
 ## tf imports
 import tensorflow as tf  
 import tensorflow.keras.backend as K
+from joblib import Parallel, delayed
+
+
+###### user variables
+####========================
+resampleAlg = 'mode' # alternatives = # 'nearest', 'max', 'min', 'average', 'gauss'
+TARGET_SIZE = 768
 
 # do_parallel = True 
 do_parallel = False
@@ -47,24 +54,55 @@ do_parallel = False
 profile = 'meta' ## predseg + meta 
 # profile = 'minimal' ## predseg
 
+## profile must be 'meta' or 'full' for this script to work
+
+make_RGB_label_ortho = True # make an RGB label mosaic as well as a greyscale one
+make_jpeg = False ## make JPEG mosaics as well as geotiffs
+
+#===============================
+
 if do_parallel:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-
 if __name__ == "__main__":
-        
+
+    ##################################
+    ##### STEP 1: OPTIONS
+
+    ### choose resampleAlg 
+    root = Tk()
+    root.geometry('200x100')
+
+    choices = [
+        "nearest",
+        "mode",
+        "min",
+        "max",
+        "average",
+        "gauss"
+    ]
+
+    variable = StringVar(root)
+    variable.set("mode")
+    w = OptionMenu(root, variable, *choices)
+    w.pack()
+    root.mainloop()
+
+    resampleAlg = variable.get()
+    print("You chose resample algorithm : {}".format(resampleAlg))
+
     #### choose generic task 
     root = Tk()
+    root.geometry('200x100')
+
+    ## only these two apply to orthomosaics
     choices = [
-        "aerial_watermasking",
-        "aerial_landcover",
-        "satellite_shorelines",
         "generic_landcover_highres",
         "coastal_landcover_highres"
     ]
 
     variable = StringVar(root)
-    variable.set("aerial_watermasking")
+    variable.set("generic_landcover_highres")
     w = OptionMenu(root, variable, *choices)
     w.pack()
     root.mainloop()
@@ -75,46 +113,9 @@ if __name__ == "__main__":
 
     #### choose zenodo release
     root = Tk()
+    root.geometry('200x100')
 
-    if task_id=="aerial_watermasking":
-
-        choices = [
-        "noaa_oblique_2class_7604083",
-        "aerial_oblique_2class_7604075",
-        "aerial_nadir_2class_7604077"
-        ]
-
-        variable = StringVar(root)
-        variable.set("aerial_oblique_2class_7604075")
-
-    elif task_id=="aerial_landcover":
-
-        choices = [
-        "floodnet_10class_7566810",
-        "noaa_4class_7631354"
-        ]
-
-        variable = StringVar(root)
-        variable.set("noaa_4class_7631354")
-
-    elif task_id=="satellite_shorelines":
-
-        choices = [
-        "sat_RGB_2class_7448405",
-        "sat_5band_2class_7448390",
-        "sat_NDWI_2class_7557072",
-        "sat_MNDWI_2class_7557080",
-        "sat_RGB_4class_6950472",
-        "sat_5band_4class_7344606",
-        "sat_NDWI_4class_7352859",
-        "sat_MNDWI_4class_7352850",
-        "sat_7band_4class_7358284"
-        ]
-
-        variable = StringVar(root)
-        variable.set("sat_RGB_4class_6950472")
-
-    elif task_id=="generic_landcover_highres":
+    if task_id=="generic_landcover_highres":
 
         choices = [
         "openearthmap_9class_7576894",
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     print("Model implementation choice : {}".format(model_choice))
 
 
-    ####======================================
+    # ####======================================
 
     # segmentation zoo directory
     parent_direc = os.path.dirname(os.getcwd())
@@ -199,19 +200,12 @@ if __name__ == "__main__":
         elif model_choice == "ENSEMBLE":
             model_functions.download_ENSEMBLE_model(files, model_direc)
 
-    ###==============================================
+    # ###==============================================
 
 
     ###############################################
     ################# INPUTS
     ### user inputs
-    ### im using the OEM model for thsi example, which is for 512x512 pixel tiles
-    TARGET_SIZE = 768
-    ### chop up image ortho into tiles with 50% overlap
-    # OVERLAP_PX = TARGET_SIZE//2
-    # image_ortho = '/home/marda/Downloads/seg2map_test/image_mosaic/merged_multispectral_clipped.jpg'
-    resampleAlg = 'mode'
-
     # Request the orthomosaic geotiff file
     root = Tk()
     root.filename =  filedialog.askopenfilename(title = "Select orthomosaic file",filetypes = (("geotff file","*.tif"),("jpeg file (with xml and/or wld)","*.jpg"),("all files","*.*")))
@@ -219,48 +213,12 @@ if __name__ == "__main__":
     print(image_ortho)
     root.withdraw()
 
-    # resampleAlg = 'mode' 
-    ## alternatives = # 'nearest', 'max', 'min', 'average', 'gauss'
-
-    #### choose resampleAlg 
-    # root = Tk()
-    # choices = [
-    #     "nearest",
-    #     "mode",
-    #     "min",
-    #     "max",
-    #     "average",
-    #     "gauss"
-    # ]
-
-    # variable = StringVar(root)
-    # variable.set("mode")
-    # w = OptionMenu(root, variable, *choices)
-    # w.pack()
-    # root.mainloop()
-
-    # resampleAlg = variable.get()
-    # print("You chose resample algorithm : {}".format(resampleAlg))
-
-    # #### choose tile size 
-    # root = Tk()
-    # choices = [
-    #     "512",
-    #     "768",
-    #     "1024",
-    # ]
-
-    # variable = StringVar(root)
-    # variable.set("512")
-    # w = OptionMenu(root, variable, *choices)
-    # w.pack()
-    # root.mainloop()
-
-    # TARGET_SIZE = int(variable.get())
-    # print("You chose tile size : {} px".format(TARGET_SIZE))
-
     OVERLAP_PX = TARGET_SIZE//2
     print("Overlap size : {} px".format(OVERLAP_PX))
+
+
+    ##################################
+    ##### STEP 2: MAKE ORTHO TILES
 
     ###############################################
     ################# ORTHO TILES
@@ -295,11 +253,13 @@ if __name__ == "__main__":
         gdal_translate_jpeg(f, kwargs)
 
     ## delete tif files
-    [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
+    _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
 
 
-    ### this is where codes would go to apply Zoo model
-    ### (I just did this using Zoo/scripts/select_model_)
+    ##################################
+    ##### STEP 3: MAKE LABEL TILES
+
+    ### apply Zoo model
 
     sample_direc = outdir
 
@@ -315,12 +275,12 @@ if __name__ == "__main__":
         try:
             # "fullmodel" is for serving on zoo they are smaller and more portable between systems than traditional h5 files
             # gym makes a h5 file, then you use gym to make a "fullmodel" version then zoo can read "fullmodel" version
-            configfile = weights.replace("_fullmodel.h5", ".json").replace("weights", "config").strip()
+            configfile = weights.replace("_fullmodel.h5", ".json")#.replace("weights", "config").strip()
             with open(configfile) as file:
                 config = json.load(file)
         except:
             # Turn the .h5 file into a json so that the data can be loaded into dynamic variables
-            configfile = weights.replace(".h5", ".json").replace("weights", "config").strip()
+            configfile = weights.replace(".h5", ".json")#.replace("weights", "config").strip()
             with open(configfile) as file:
                 config = json.load(file)
         # Dynamically creates all variables from config dict.
@@ -417,15 +377,19 @@ if __name__ == "__main__":
         print(f"{file} failed. Check config file, and check the path provided contains valid imagery")
 
 
+    ##################################
+    ##### STEP 4: STITCH ORTHO LABEL TILES
+
     ### now, you have the 'out' folder ...
 
-    ## the out folder contains a bunch of crap we dont want. let's delete those files
+    ## the out folder may contain a bunch of crap we dont want. let's delete those files
+    ## this should do nothing if mode='meta' or mode='minimal'
 
     # "prob.png" files ...
-    [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*prob.png')]
+    _ = [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*prob.png')]
 
     # "overlay.png" files ...
-    [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*overlay.png')]
+    _ = [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*overlay.png')]
 
     ###############################################
     ################# LABEL ORTHO CREATION PREP
@@ -456,13 +420,64 @@ if __name__ == "__main__":
     ### let's stitch the label "predseg" pngs!
 
     # make some output paths
+    if make_RGB_label_ortho:
+        outVRTrgb = os.path.join(indir, 'MosaicRGB.vrt')
+        outTIFrgb = os.path.join(indir, 'MosaicRGB.tif')
+        if make_jpeg:
+            outJPGrgb = os.path.join(indir, 'MosaicRGB.jpg')
+
     outVRT = os.path.join(indir, 'Mosaic.vrt')
     outTIF = os.path.join(indir, 'Mosaic.tif')
-    outJPG = os.path.join(indir, 'Mosaic.jpg')
+    if make_jpeg:
+        outJPG = os.path.join(indir, 'Mosaic.jpg')
 
+    if make_RGB_label_ortho:
+        ## now we have pngs and png.xml files with the same names in the same folder
+        imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*.png')))
+        print('{} images to mosaic'.format(len(imgsToMosaic)))
+
+        # First build vrt for geotiff output
+        vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg)
+        ds = gdal.BuildVRT(outVRTrgb, imgsToMosaic, options=vrt_options)
+        ds.FlushCache()
+        ds = None
+
+        # then build tiff
+        ds = gdal.Translate(destName=outTIFrgb, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=outVRTrgb)
+        ds.FlushCache()
+        ds = None
+
+        if make_jpeg:
+            # now build jpeg (optional)
+            ds = gdal.Translate(destName=outJPGrgb, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=JPG", "TILED=YES", "TFW=YES", "QUALITY=100"], srcDS=outVRTrgb)
+            ds.FlushCache()
+            ds = None
+
+    ##################################
+    ##### STEP 5: MAKE AND STITCH ORTHO GREYSCALE LABEL TILES
+
+    ## okay, now let's make the greyscale label mosaic
+
+    npzs = sorted(glob(os.path.join(outdir, 'out', '*.npz')))
+
+    def write_greylabel_to_png(k):
+        with np.load(k) as data:
+            dat = 1+np.round(data['grey_label'].astype('uint8'))
+        imsave(k.replace('.npz','.png'), dat, check_contrast=False, compression=0)
+
+    for k in npzs:
+        write_greylabel_to_png(k)
+        
     ## now we have pngs and png.xml files with the same names in the same folder
-    imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*.png')))
+    imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*res.png')))
     print('{} images to mosaic'.format(len(imgsToMosaic)))
+
+
+    xml_files = sorted(glob(os.path.join(outdir,'out', '*.xml')))
+    ## copy and name xmls
+    for k in xml_files:
+        shutil.copyfile(k,k.replace('.png','_res.png'))
+
 
     # First build vrt for geotiff output
     vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg)
@@ -475,9 +490,74 @@ if __name__ == "__main__":
     ds.FlushCache()
     ds = None
 
-    # # now build jpeg (optional)
-    # ds = gdal.Translate(destName=outJPG, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=JPG", "TILED=YES", "TFW=YES", "QUALITY=100"], srcDS=outVRT)
-    # ds.FlushCache()
-    # ds = None
+    if make_jpeg:
+        # now build jpeg (optional)
+        ds = gdal.Translate(destName=outJPG, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=JPG", "TILED=YES", "TFW=YES", "QUALITY=100"], srcDS=outVRT)
+        ds.FlushCache()
+        ds = None
 
 
+
+
+    # # first, we have to make float tifs out of the npz field 'av_softmax_scores'
+
+    # def write_softmax_to_tif(k):
+    #     with np.load(k) as data:
+    #         probs = data['av_softmax_scores']
+    #     for i in range(probs.shape[-1]):
+    #         imsave(k.replace('.npz',str(i)+'.tif'), probs[:,:,i], check_contrast=False)
+    #     gc.collect()
+    #     return 0
+
+    # _ = Parallel(n_jobs=-1, verbose=1, timeout=99999)(
+    #     delayed(write_softmax_to_tif(k))() for k in npzs)
+        
+    # ## now we have to make sure there is a xml file per png file
+
+    # xml_files = sorted(glob(os.path.join(outdir,'out', '*.xml')))
+    # ## copy and name xmls
+    # for k in xml_files:
+    #     for n in range(NCLASSES):
+    #         shutil.copyfile(k,k.replace('.png','_res'+str(n)+'.png'))
+
+
+    
+    # vrt_options_gauss = gdal.BuildVRTOptions(resampleAlg='gauss', srcNodata=0, VRTNodata=0)
+
+    # for k in range(NCLASSES):
+
+    #     tmpVRT = os.path.join(indir, 'tmp.vrt')
+
+    #     ## now we have pngs and png.xml files with the same names in the same folder
+    #     imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*res'+str(k)+'.png')))
+    #     print('{} images to mosaic'.format(len(imgsToMosaic)))
+
+    #     # First build vrt for geotiff output
+    #     ds = gdal.BuildVRT(tmpVRT, imgsToMosaic, options=vrt_options_gauss)
+    #     ds.FlushCache()
+    #     ds = None
+
+    #     # then build tiff
+    #     ds = gdal.Translate(destName=outTIF.replace('.tif','_prob'+str(k)+'.tif'), creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=tmpVRT)
+    #     ds.FlushCache()
+    #     ds = None
+
+    #     os.remove(tmpVRT)
+
+
+    # # #### choose tile size 
+    # # root = Tk()
+    # # choices = [
+    # #     "512",
+    # #     "768",
+    # #     "1024",
+    # # ]
+
+    # # variable = StringVar(root)
+    # # variable.set("512")
+    # # w = OptionMenu(root, variable, *choices)
+    # # w.pack()
+    # # root.mainloop()
+
+    # # TARGET_SIZE = int(variable.get())
+    # # print("You chose tile size : {} px".format(TARGET_SIZE))
