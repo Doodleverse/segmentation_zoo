@@ -216,6 +216,11 @@ if __name__ == "__main__":
     OVERLAP_PX = TARGET_SIZE//2
     print("Overlap size : {} px".format(OVERLAP_PX))
 
+    # image_ortho = os.path.normpath(image_ortho)
+    # if ' ' in image_ortho:
+    #     image_ortho = image_ortho.replace(' ','\\ ')
+    #     image_ortho = os.path.normpath(image_ortho)
+
 
     ##################################
     ##### STEP 2: MAKE ORTHO TILES
@@ -249,12 +254,23 @@ if __name__ == "__main__":
         ds = gdal.Translate(f.replace('.tif','.jpg'), f, **kwargs)
         ds = None # close and save ds
 
-    for f in glob(outdir+os.sep+'*.tif'):
-        gdal_translate_jpeg(f, kwargs)
+    files_to_convert = glob(outdir+os.sep+'*.tif')
 
-    ## delete tif files
-    _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
+    # if len(files_to_convert)==0: ## space in filename
+    #    outdir = outdir.replace('\\','')
+    #    sample_filenames = sorted(glob(outdir + os.sep + "*.tif")) 
 
+    if len(files_to_convert)>0:
+
+        for f in files_to_convert:
+            gdal_translate_jpeg(f, kwargs)
+
+        ## delete tif files
+        _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
+
+    else:
+        print("No tif files found")
+        sys.exit(0)
 
     ##################################
     ##### STEP 3: MAKE LABEL TILES

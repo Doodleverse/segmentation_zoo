@@ -553,6 +553,9 @@ def sort_files(sample_direc: str) -> list:
     """
     # prepares data to be predicted
     sample_filenames = sorted(glob(sample_direc + os.sep + "*.*"))
+    # if len(sample_filenames)==0: ## space in filename
+    #    sample_direc = sample_direc.replace('\\','')
+    #    sample_filenames = sorted(glob(sample_direc + os.sep + "*.*")) 
     if sample_filenames[0].split(".")[-1] == "npz":
         sample_filenames = sorted(tf.io.gfile.glob(sample_direc + os.sep + "*.npz"))
     else:
