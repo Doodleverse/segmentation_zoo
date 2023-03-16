@@ -24,7 +24,7 @@
 # SOFTWARE.
 
 # standard imports
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from tkinter import *
 import sys, os, shutil, json
 from glob import glob
@@ -36,9 +36,6 @@ gdal.SetCacheMax(2**30) # max out the cache
 # local imports
 import model_functions
 
-## tf imports
-# import tensorflow as tf  
-# from joblib import Parallel, delayed
 
 ###### user variables
 ####========================

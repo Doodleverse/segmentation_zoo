@@ -6,7 +6,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2022-2023, Marda Science LLC
+# Copyright (c) 2022-2023, Sharon Fitzpatrick and Marda Science LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
