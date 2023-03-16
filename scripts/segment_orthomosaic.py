@@ -483,7 +483,7 @@ if __name__ == "__main__":
         print('{} images to mosaic'.format(len(imgsToMosaic)))
 
         # First build vrt for geotiff output
-        vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg)
+        vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg, srcNodata=0, VRTNodata=0)
         ds = gdal.BuildVRT(outVRTrgb, imgsToMosaic, options=vrt_options)
         ds.FlushCache()
         ds = None
@@ -526,7 +526,7 @@ if __name__ == "__main__":
 
 
     # First build vrt for geotiff output
-    vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg)
+    vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg, srcNodata=0, VRTNodata=0)
     ds = gdal.BuildVRT(outVRT, imgsToMosaic, options=vrt_options)
     ds.FlushCache()
     ds = None
@@ -542,68 +542,44 @@ if __name__ == "__main__":
         ds.FlushCache()
         ds = None
 
+    ##################################
+    ##### STEP 6: MAKE AND STITCH ORTHO GREYSCALE probability TILES
 
 
+    def write_greyprobs_to_tif(k):
+        with np.load(k) as data:
+            dat = tf.nn.softmax(data['av_softmax_scores']).numpy().astype('float32')
+        for i in range(dat.shape[-1]):
+            imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat[:,:,i], check_contrast=False, compression=0)
+        return dat
 
-    # # first, we have to make float tifs out of the npz field 'av_softmax_scores'
+    for k in npzs:
+        dat = write_greyprobs_to_tif(k)
 
-    # def write_softmax_to_tif(k):
-    #     with np.load(k) as data:
-    #         probs = data['av_softmax_scores']
-    #     for i in range(probs.shape[-1]):
-    #         imsave(k.replace('.npz',str(i)+'.tif'), probs[:,:,i], check_contrast=False)
-    #     gc.collect()
-    #     return 0
-
-    # _ = Parallel(n_jobs=-1, verbose=1, timeout=99999)(
-    #     delayed(write_softmax_to_tif(k))() for k in npzs)
-        
-    # ## now we have to make sure there is a xml file per png file
-
-    # xml_files = sorted(glob(os.path.join(outdir,'out', '*.xml')))
-    # ## copy and name xmls
-    # for k in xml_files:
-    #     for n in range(NCLASSES):
-    #         shutil.copyfile(k,k.replace('.png','_res'+str(n)+'.png'))
+    xml_files = sorted(glob(os.path.join(outdir,'out', '*res*.xml')))
+    ## copy and name xmls
+    for i in range(dat.shape[-1]):
+        for k in xml_files:
+            shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
 
 
-    
-    # vrt_options_gauss = gdal.BuildVRTOptions(resampleAlg='gauss', srcNodata=0, VRTNodata=0)
+    for i in range(dat.shape[-1]):
+        outVRT = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.vrt')
+        outTIF = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.tif')
 
-    # for k in range(NCLASSES):
-
-    #     tmpVRT = os.path.join(indir, 'tmp.vrt')
-
-    #     ## now we have pngs and png.xml files with the same names in the same folder
-    #     imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*res'+str(k)+'.png')))
-    #     print('{} images to mosaic'.format(len(imgsToMosaic)))
-
-    #     # First build vrt for geotiff output
-    #     ds = gdal.BuildVRT(tmpVRT, imgsToMosaic, options=vrt_options_gauss)
-    #     ds.FlushCache()
-    #     ds = None
-
-    #     # then build tiff
-    #     ds = gdal.Translate(destName=outTIF.replace('.tif','_prob'+str(k)+'.tif'), creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=tmpVRT)
-    #     ds.FlushCache()
-    #     ds = None
-
-    #     os.remove(tmpVRT)
+        ## now we have pngs and png.xml files with the same names in the same folder
+        imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*prob'+str(i)+'.tif')))
+        print('{} images to mosaic'.format(len(imgsToMosaic)))
 
 
-    # # #### choose tile size 
-    # # root = Tk()
-    # # choices = [
-    # #     "512",
-    # #     "768",
-    # #     "1024",
-    # # ]
+        # First build vrt for geotiff output
+        vrt_options = gdal.BuildVRTOptions(resampleAlg="lanczos",srcNodata=0, VRTNodata=0)
+        ds = gdal.BuildVRT(outVRT, imgsToMosaic, options=vrt_options)
+        ds.FlushCache()
+        ds = None
 
-    # # variable = StringVar(root)
-    # # variable.set("512")
-    # # w = OptionMenu(root, variable, *choices)
-    # # w.pack()
-    # # root.mainloop()
+        # then build tiff
+        ds = gdal.Translate(destName=outTIF, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=outVRT)
+        ds.FlushCache()
+        ds = None
 
-    # # TARGET_SIZE = int(variable.get())
-    # # print("You chose tile size : {} px".format(TARGET_SIZE))
