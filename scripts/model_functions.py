@@ -335,7 +335,10 @@ def do_seg(
         if WRITE_MODELMETADATA:
             metadatadict["av_softmax_scores"] = softmax_scores
 
-        est_label = np.argmax(softmax_scores, -1)
+        if np.std(image)>0:
+            est_label = np.argmax(softmax_scores, -1)
+        else:
+            est_label = est_label.astype('uint8')
 
 
     class_label_colormap = [

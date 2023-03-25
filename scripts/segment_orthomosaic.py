@@ -558,9 +558,21 @@ if __name__ == "__main__":
     def write_greyprobs_to_tif(k):
         with np.load(k) as data:
             dat = tf.nn.softmax(data['av_softmax_scores']).numpy().astype('float32')
-        for i in range(dat.shape[-1]):
-            imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat[:,:,i], check_contrast=False, compression=0)
+        if np.ndim(dat)==2:
+            NCLASSES=1
+        else:
+            NCLASSES = dat.shape[-1]
+        for i in range(NCLASSES):
+            if NCLASSES>1:
+                imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat[:,:,i], check_contrast=False, compression=0)
+            else:
+                imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat, check_contrast=False, compression=0)
+
         return dat
+
+    # k=npzs[0]
+    # with np.load(k) as data:
+    #     dat = data['av_softmax_scores']
 
     for k in npzs:
         dat = write_greyprobs_to_tif(k)
@@ -571,8 +583,13 @@ if __name__ == "__main__":
         for k in xml_files:
             shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
 
-
-    for i in range(dat.shape[-1]):
+    if np.ndim(dat)==2:
+        NCLASSES=1
+    else:
+        NCLASSES = dat.shape[-1]
+        
+    for i in range(NCLASSES):
+    # for i in range(dat.shape[-1]):
         outVRT = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.vrt')
         outTIF = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.tif')
 
