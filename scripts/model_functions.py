@@ -64,6 +64,52 @@ from doodleverse_utils.model_imports import (
     segformer
 )
 
+
+def download_url_dict(url_dict):
+    for save_path, url in url_dict.items():
+        with requests.get(url, stream=True) as response:
+            if response.status_code == 404:
+                raise Exception(f"404 response for {url}. Please raise an issue on GitHub.")
+            
+            # too many requests were made to the API
+            if  response.status_code == 429:
+                content = response.text()
+                print(f"Response from API for status_code: {response.status_code}: {content}")
+                raise Exception(f"Response from API for status_code: {response.status_code}: {content}")
+                return False
+            
+            # raise an exception if the response status_code is not 200
+            if response.status_code != 200:
+                print(f"response.status_code {response.status_code} for {url}")
+                return False
+            
+            response.raise_for_status()
+
+            content_length = response.headers.get("Content-Length")
+            if content_length is not None:
+                content_length = int(content_length)
+                with open(save_path, "wb") as fd:
+                    with tqdm.auto.tqdm(
+                        total=content_length,
+                        unit="B",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc=f"Downloading {os.path.basename(save_path)}",
+                        initial=0,
+                        ascii=False,
+                        position=0,
+                    ) as pbar:
+                        for chunk in response.iter_content(1024):
+                            if not chunk:
+                                break
+                            fd.write(chunk)
+                            pbar.update(len(chunk))
+            else:
+                with open(save_path, "wb") as fd:
+                    for chunk in response.iter_content(1024):
+                        fd.write(chunk)
+
+
 # #-----------------------------------
 def get_image(f,N_DATA_BANDS,TARGET_SIZE,MODEL):
     if N_DATA_BANDS <= 3:
@@ -727,7 +773,9 @@ def download_BEST_model(files: list, model_direc: str) -> None:
     url_dict = get_url_dict_to_download(models_json_dict)
     # if any files are not found locally download them asynchronous
     if url_dict != {}:
-        run_async_download(url_dict)
+        download_status=download_url_dict(url_dict)
+        if download_status == False:
+            raise Exception("Download failed")
 
 
 def download_ENSEMBLE_model(files: list, model_direc: str) -> None:
@@ -749,7 +797,9 @@ def download_ENSEMBLE_model(files: list, model_direc: str) -> None:
     url_dict = get_url_dict_to_download(models_json_dict)
     # if any files are not found locally download them asynchronous
     if url_dict != {}:
-        run_async_download(url_dict)
+        download_status=download_url_dict(url_dict)
+        if download_status == False:
+            raise Exception("Download failed")
 
 
 def get_weights_list(model_choice: str, weights_direc: str) -> list:
