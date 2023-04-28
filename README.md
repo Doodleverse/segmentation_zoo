@@ -51,7 +51,7 @@ git clone --depth 1 https://github.com/Doodleverse/segmentation_zoo.git
 conda create -n zoo python=3.9
 conda activate zoo
 conda install -c conda-forge "tqdm>=4.64.1" scipy numpy scikit-image jupyterlab joblib pandas plotly natsort matplotlib -y
-pip install tensorflow doodleverse_utils==0.0.29 ipyfilechooser aiohttp
+pip install tensorflow doodleverse_utils==0.0.29 ipyfilechooser aiohttp transformers
 pip install tensorflow-gpu
 ```
 
