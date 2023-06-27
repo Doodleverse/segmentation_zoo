@@ -87,7 +87,9 @@ if __name__ == "__main__":
 
         choices = [
         "floodnet_10class_7566810",
-        "noaa_4class_7631354"
+        "noaa_4class_7631354",
+        "elwha_alluvial_driftwood_segformer_7933013",
+        "elwha_alluvial_driftwood_resunet_8072293"
         ]
 
         variable = StringVar(root)
@@ -96,16 +98,29 @@ if __name__ == "__main__":
     elif task_id=="satellite_shorelines":
 
         choices = [
-        "sat_RGB_2class_7448405",
-        "sat_5band_2class_7448390",
-        "sat_NDWI_2class_7557072",
-        "sat_MNDWI_2class_7557080",
-        "sat_RGB_4class_6950472",
-        "sat_5band_4class_7344606",
-        "sat_NDWI_4class_7352859",
-        "sat_MNDWI_4class_7352850",
+        "sat_RGB_4class_segformer_7933015",
+        "sat_RGB_4class_resunet_6950472",
+        "sat_RGB_2class_resunet_7865364",
         "sat_7band_4class_7358284"
+        "sat_5band_4class_7344606",
+        "sat_5band_2class_7448390",
+        "sat_NDWI_4class_7352859",
+        "sat_MNDWI_4class_7352850",        
+        "sat_NDWI_2class_7557072",
+        "sat_MNDWI_2class_7557080"
         ]
+
+        # choices = [
+        # "sat_RGB_2class_7448405",
+        # "sat_5band_2class_7448390",
+        # "sat_NDWI_2class_7557072",
+        # "sat_MNDWI_2class_7557080",
+        # "sat_RGB_4class_6950472",
+        # "sat_5band_4class_7344606",
+        # "sat_NDWI_4class_7352859",
+        # "sat_MNDWI_4class_7352850",
+        # "sat_7band_4class_7358284"
+        # ]
 
         variable = StringVar(root)
         variable.set("sat_RGB_4class_6950472")

@@ -39,8 +39,8 @@ import model_functions
 
 ###### user variables
 ####========================
-resampleAlg = 'mode' # alternatives = # 'nearest', 'max', 'min', 'average', 'gauss'
-TARGET_SIZE = 768
+# resampleAlg = 'mode' # alternatives = # 'nearest', 'max', 'min', 'average', 'gauss'
+# TARGET_SIZE = 1024 #768
 
 # do_parallel = True 
 do_parallel = False
@@ -63,6 +63,29 @@ if __name__ == "__main__":
 
     ##################################
     ##### STEP 1: OPTIONS
+
+    ### choose target size 
+    root = Tk()
+    root.geometry('200x100')
+
+    choices = [
+        "256",
+        "512",
+        "768",
+        "1024",
+        "1536",
+        "2048"
+    ]
+
+    variable = StringVar(root)
+    variable.set("mode")
+    w = OptionMenu(root, variable, *choices)
+    w.pack()
+    root.mainloop()
+
+    TARGET_SIZE = variable.get()
+    print("You chose TARGET_SIZE : {}".format(TARGET_SIZE))
+
 
     ### choose resampleAlg 
     root = Tk()
@@ -121,7 +144,9 @@ if __name__ == "__main__":
         "aaai_building_7607895",
         "aaai_floodedbuildings_7622733",
         "xbd_building_7613212",
-        "xbd_damagedbuilding_7613175"
+        "xbd_damagedbuilding_7613175",
+        "elwha_alluvial_driftwood_7933013"
+        "elwha_alluvial_driftwood_resunet_8072293"
         ]
         # "floodnet_10class_7566797", this is the 1024x768 px version
 
@@ -141,6 +166,10 @@ if __name__ == "__main__":
             "orthoCT_8class_segformer_7641724",
             "chesapeake_7class_7576904",
             "chesapeake_7class_segformer_7677506"
+            "watermask_noaa_oblique_2class_7604083",
+            "watermask_aerial_oblique_2class_7604075",
+            "watermask_aerial_nadir_2class_7604077",
+            "watermask_pcmsc_wm_v2_7700430"            
         ]
         # add: barrierIslands
 
@@ -265,12 +294,12 @@ if __name__ == "__main__":
     if os.name == "nt":
 
         try:
+            print("Attempting to use gdal from conda env")
             cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
             os.system(cmd)
         except:
-
+            print("That didn't work. Attempting to use gdal from osgeo4w")
             from subprocess import Popen, PIPE
-
             process=Popen(["python","C:\\OSGeo4W64\\bin\\gdal_retile.py","-r", "near", "-ot", "Byte","-ps",str(TARGET_SIZE),str(TARGET_SIZE),"-overlap",str(OVERLAP_PX),"-co", "tiled=YES","-targetDir",outdir, image_ortho], stdout=PIPE, stderr=PIPE)
             stdout, stderr = process.communicate()
 

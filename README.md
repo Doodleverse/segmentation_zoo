@@ -84,12 +84,13 @@ The set of available tasks.models are listed below, by theme and more details ma
 ### Task: satellite-derived shoreline location extraction
 
 * 2-class models
-   * "sat_RGB_2class_7448405", 2 class (water, other), RGB satellite imagery
+   * "sat_RGB_2class_resunet_7865364", 2 class (water, other), RGB satellite imagery
    * "sat_5band_2class_7448390", 2 class (water, other), RGB+NIR+SWIR satellite imagery
    * "sat_NDWI_2class_7557072", 2 class (water, other), NDWI satellite imagery
    * "sat_MNDWI_2class_7557080", 2 class (water, other), MNDWI satellite imagery
 * 4-class models
-   * "sat_RGB_4class_6950472", 4 class (water, whitewater, sediment, other), RGB satellite imagery
+   * "sat_RGB_4class_segformer_7933015", 4 class (water, whitewater, sediment, other), RGB satellite imagery, segformer
+   * "sat_RGB_4class_resunet_6950472", 4 class (water, whitewater, sediment, other), RGB satellite imagery, resunet
    * "sat_5band_4class_7344606", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR satellite imagery
    * "sat_NDWI_4class_7352859", 4 class (water, whitewater, sediment, other), NDWI satellite imagery
    * "sat_MNDWI_4class_7352850", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery
@@ -97,6 +98,7 @@ The set of available tasks.models are listed below, by theme and more details ma
 
 ### Task: masking water in aerial images
 
+* "pcmsc_wm_v2_7700430", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery, westcoast high-relief coasts
 * "aerial_2class_6234122", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
 * "aerial_2class_6235090", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel imagery
 * "noaa_2class_7604083", 2 class (water, other), RGB aerial oblique imagery, 1024x768 pixel NOAA ERI imagery
@@ -108,6 +110,9 @@ The set of available tasks.models are listed below, by theme and more details ma
 * FloodNet models
    * "floodnet_10class_7566810", 768x512 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery
    * "floodnet_10class_7566810", 1024x768 pixel imagery, 10 class (Background, Building-flooded, Building-non-flooded, Road-flooded, Road-non-flooded, Water, Tree, Vehicle, Pool, Grass), RGB UAV imagery   
+* Elwha River alluvial models
+   * "elwha_alluvial_driftwood_segformer_7933013", 2 class (other, wood), RGB aerial orthomosaic imagery, 768x768 pixel imagery, segformer
+   * "elwha_alluvial_driftwood_resunet_8072293", 2 class (other, wood), RGB aerial orthomosaic imagery, 768x768 pixel imagery, resunet
 
 ### Task: coastal landcover classification in Orthomosaic / NAIP (Seg2Map)
 
