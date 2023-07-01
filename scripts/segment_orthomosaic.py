@@ -78,12 +78,12 @@ if __name__ == "__main__":
     ]
 
     variable = StringVar(root)
-    variable.set("mode")
+    variable.set("768")
     w = OptionMenu(root, variable, *choices)
     w.pack()
     root.mainloop()
 
-    TARGET_SIZE = variable.get()
+    TARGET_SIZE = int(variable.get())
     print("You chose TARGET_SIZE : {}".format(TARGET_SIZE))
 
 
@@ -289,54 +289,58 @@ if __name__ == "__main__":
     except:
         pass
 
-    ### chop up image ortho into tiles with 50% overlap
-
-    if os.name == "nt":
-
-        try:
-            print("Attempting to use gdal from conda env")
-            cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
-            os.system(cmd)
-        except:
-            print("That didn't work. Attempting to use gdal from osgeo4w")
-            from subprocess import Popen, PIPE
-            process=Popen(["python","C:\\OSGeo4W64\\bin\\gdal_retile.py","-r", "near", "-ot", "Byte","-ps",str(TARGET_SIZE),str(TARGET_SIZE),"-overlap",str(OVERLAP_PX),"-co", "tiled=YES","-targetDir",outdir, image_ortho], stdout=PIPE, stderr=PIPE)
-            stdout, stderr = process.communicate()
+    if os.path.isdir(os.path.normpath(outdir)):
+        print(f"{outdir} already exists ... skipping tile creation")
 
     else:
-        try:
-            ## it would be cleaner if the gdal_retile.py script could be wrapped in gdal/osgeo python, but it errored for me ...
-            cmd = 'gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
-            os.system(cmd)
-        except:
-            cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
-            os.system(cmd)
+        ### chop up image ortho into tiles with 50% overlap
 
-    ### convert to jpegs for Zoo model
-    kwargs = {
-        'format': 'JPEG',
-        'outputType': gdal.GDT_Byte
-    }
+        if os.name == "nt":
 
-    def gdal_translate_jpeg(f, bandList, kwargs):
-        ds = gdal.Translate(f.replace('.tif','.jpg'), f, bandList=bandList, **kwargs)
-        ds = None # close and save ds
+            try:
+                print("Attempting to use gdal from conda env")
+                cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+                os.system(cmd)
+            except:
+                print("That didn't work. Attempting to use gdal from osgeo4w")
+                from subprocess import Popen, PIPE
+                process=Popen(["python","C:\\OSGeo4W64\\bin\\gdal_retile.py","-r", "near", "-ot", "Byte","-ps",str(TARGET_SIZE),str(TARGET_SIZE),"-overlap",str(OVERLAP_PX),"-co", "tiled=YES","-targetDir",outdir, image_ortho], stdout=PIPE, stderr=PIPE)
+                stdout, stderr = process.communicate()
 
-    files_to_convert = glob(outdir+os.sep+'*.tif')
+        else:
+            try:
+                ## it would be cleaner if the gdal_retile.py script could be wrapped in gdal/osgeo python, but it errored for me ...
+                cmd = 'gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+                os.system(cmd)
+            except:
+                cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+                os.system(cmd)
 
-    bandList=[1,2,3]
+        ### convert to jpegs for Zoo model
+        kwargs = {
+            'format': 'JPEG',
+            'outputType': gdal.GDT_Byte
+        }
 
-    if len(files_to_convert)>0:
+        def gdal_translate_jpeg(f, bandList, kwargs):
+            ds = gdal.Translate(f.replace('.tif','.jpg'), f, bandList=bandList, **kwargs)
+            ds = None # close and save ds
 
-        for f in files_to_convert:
-            gdal_translate_jpeg(f, bandList, kwargs)
+        files_to_convert = glob(outdir+os.sep+'*.tif')
 
-        ## delete tif files
-        _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
+        bandList=[1,2,3]
 
-    else:
-        print("No tif files found")
-        sys.exit(0)
+        if len(files_to_convert)>0:
+
+            for f in files_to_convert:
+                gdal_translate_jpeg(f, bandList, kwargs)
+
+            ## delete tif files
+            _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
+
+        else:
+            print("No tif files found")
+            sys.exit(0)
 
     ##################################
     ##### STEP 3: MAKE LABEL TILES
