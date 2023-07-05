@@ -45,10 +45,6 @@ import numpy as np
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-import tensorflow as tf
-from transformers import TFSegformerForSemanticSegmentation
-import tensorflow.keras.backend as K
-
 from doodleverse_utils.prediction_imports import seg_file2tensor_3band, standardize, resize  #do_seg
 from doodleverse_utils.imports import label_to_colors, imsave
 # from doodleverse_utils.model_imports import dice_coef_loss
@@ -63,6 +59,16 @@ from doodleverse_utils.model_imports import (
     simple_satunet,
     segformer
 )
+
+import tensorflow as tf
+
+from transformers import TFSegformerForSemanticSegmentation
+import tensorflow.keras.backend as K
+
+# ## geospatial imports
+# from osgeo import gdal
+# gdal.SetCacheMax(2**30) # max out the cache
+
 
 # #-----------------------------------
 def get_image(f,N_DATA_BANDS,TARGET_SIZE,MODEL):
