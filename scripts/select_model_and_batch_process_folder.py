@@ -101,7 +101,7 @@ if __name__ == "__main__":
         "sat_RGB_4class_segformer_7933015",
         "sat_RGB_4class_resunet_6950472",
         "sat_RGB_2class_resunet_7865364",
-        "sat_7band_4class_7358284"
+        "sat_7band_4class_7358284",
         "sat_5band_4class_7344606",
         "sat_5band_2class_7448390",
         "sat_NDWI_4class_7352859",

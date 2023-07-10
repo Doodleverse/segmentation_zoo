@@ -30,7 +30,12 @@ import sys, os, shutil, json
 from glob import glob
 
 # local imports
-import model_functions
+# import model_functions
+
+# local imports
+import model_data_funcs
+import model_inference_funcs
+from model_inference_funcs import tf
 
 ## geospatial imports
 from osgeo import gdal
@@ -231,29 +236,32 @@ if __name__ == "__main__":
         # segmentation zoo directory
         parent_direc = os.path.dirname(os.getcwd())
         # create downloaded models directory in segmentation_zoo/downloaded_models
-        downloaded_models_dir = get_models_dir = model_functions.get_model_dir(parent_direc, "downloaded_models")
+        downloaded_models_dir = get_models_dir = model_data_funcs.get_model_dir(parent_direc, "downloaded_models")
         print(f"Downloaded Models Located at: {downloaded_models_dir}")
         # directory to hold specific downloaded model
-        model_direc = model_functions.get_model_dir(downloaded_models_dir, dataset_id)
+        model_direc = model_data_funcs.get_model_dir(downloaded_models_dir, dataset_id)
 
         # get list of available files to download for zenodo id
-        files = model_functions.request_available_files(zenodo_id)
+        files = model_data_funcs.request_available_files(zenodo_id)
         # print(f"Available files for zenodo {zenodo_id}: {files}")
 
         zipped_model_list = [f for f in files if f["key"].endswith("rgb.zip")]
         # check if zenodo release contains zip file 'rgb.zip'
-        is_zip = model_functions.is_zipped_release(files)
+        is_zip = model_data_funcs.is_zipped_release(files)
         # zenodo release contained file 'rgb.zip' download it and unzip it
         if is_zip:
             print("Checking for zipped model")
             zip_url = zipped_model_list[0]["links"]["self"]
-            model_direc = model_functions.download_zipped_model(model_direc, zip_url)
+            model_direc = model_data_funcs.download_zipped_model(model_direc, zip_url)
         # zenodo release contained no zip files. perform async download
         elif is_zip == False:
             if model_choice == "BEST":
-                model_functions.download_BEST_model(files, model_direc)
+                model_data_funcs.download_BEST_model(files, model_direc)
             elif model_choice == "ENSEMBLE":
-                model_functions.download_ENSEMBLE_model(files, model_direc)
+                model_data_funcs.download_ENSEMBLE_model(files, model_direc)
+
+    else:
+        zenodo_id = 'custom'
 
         # ###==============================================
 
@@ -311,15 +319,15 @@ if __name__ == "__main__":
         outdir = indir+os.sep+'tiles'
         # outdir = indir+os.sep+'tiles_copy'
 
-        try:
-            os.mkdir(outdir)
-        except:
-            pass
-
         if os.path.isdir(os.path.normpath(outdir)):
             print(f"{outdir} already exists ... skipping tile creation")
 
         else:
+            try:
+                os.mkdir(outdir)
+            except:
+                pass
+
             ### chop up image ortho into tiles with 50% overlap
 
             if os.name == "nt":
@@ -379,7 +387,7 @@ if __name__ == "__main__":
         if task_id!="custom":
 
             # weights_files : list containing all the weight files fill paths
-            weights_files = model_functions.get_weights_list(model_choice, model_direc)
+            weights_files = model_inference_funcs.get_weights_list(model_choice, model_direc)
 
         # For each set of weights in weights_files load them in
         M = []
@@ -419,7 +427,7 @@ if __name__ == "__main__":
             # create the model with the data loaded in from the weights file
             print("Creating and compiling model {}...".format(counter))
             try:
-                model, model_list, config_files, model_names = model_functions.get_model(weights_files)
+                model, model_list, config_files, model_names = model_inference_funcs.get_model(weights_files)
             except Exception as e:
                 print(e)
                 print(traceback.format_exc())
@@ -427,10 +435,10 @@ if __name__ == "__main__":
                 sys.exit(2)
 
             # get dictionary containing all files needed to run models on data
-            metadatadict = model_functions.get_metadatadict(weights_files, config_files, model_names)
+            metadatadict = model_inference_funcs.get_metadatadict(weights_files, config_files, model_names)
 
         # read contents of config file into dictionary
-        config = model_functions.get_config(weights_files)
+        config = model_inference_funcs.get_config(weights_files)
         TARGET_SIZE = config.get("TARGET_SIZE")
         NCLASSES = config.get("NCLASSES")
         N_DATA_BANDS = config.get("N_DATA_BANDS")
@@ -446,7 +454,7 @@ if __name__ == "__main__":
         # read images
         #####################################
 
-        sample_filenames = model_functions.sort_files(sample_direc)
+        sample_filenames = model_inference_funcs.sort_files(sample_direc)
         print("Number of samples: %i" % (len(sample_filenames)))
 
         #####################################
@@ -467,15 +475,16 @@ if __name__ == "__main__":
             print("OTSU_THRESHOLD not found in config file(s). Setting to False")
             OTSU_THRESHOLD = False
 
-
         print(f"TESTTIMEAUG: {TESTTIMEAUG}")
         print(f"WRITE_MODELMETADATA: {WRITE_MODELMETADATA}")
         print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
 
+        out_dir_name = str(zenodo_id)
+
         # run models on imagery
         try:
             print(f"file: {file}")
-            model_functions.compute_segmentation(
+            model_inference_funcs.compute_segmentation(
                 TARGET_SIZE,
                 N_DATA_BANDS,
                 NCLASSES,
@@ -483,8 +492,8 @@ if __name__ == "__main__":
                 sample_direc,
                 model_list,
                 metadatadict,
-                do_parallel,
-                profile
+                profile,
+                out_dir_name
             )
         except Exception as e:
             print(e)
@@ -501,10 +510,10 @@ if __name__ == "__main__":
         ## this should do nothing if mode='meta' or mode='minimal'
 
         # "prob.png" files ...
-        _ = [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*prob.png')]
+        _ = [os.remove(k) for k in glob(outdir+os.sep+out_dir_name+os.sep+'*prob.png')]
 
         # "overlay.png" files ...
-        _ = [os.remove(k) for k in glob(outdir+os.sep+'out'+os.sep+'*overlay.png')]
+        _ = [os.remove(k) for k in glob(outdir+os.sep+out_dir_name+os.sep+'*overlay.png')]
 
         ###############################################
         ################# LABEL ORTHO CREATION PREP
@@ -513,19 +522,19 @@ if __name__ == "__main__":
         ### in the same directoy and have the same filename root
 
         # Get imgs list
-        imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*.png')))
+        imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*.png')))
 
         ## copy the xml files into the 'out' folder
         xml_files = sorted(glob(os.path.join(outdir, '*.xml')))
 
         for k in xml_files:
-            shutil.copyfile(k,k.replace(outdir,outdir+os.sep+'out'))
+            shutil.copyfile(k,k.replace(outdir,outdir+os.sep+out_dir_name)) #'out'))
 
         ## rename pngs
         for k in imgsToMosaic:
             os.rename(k,k.replace('_predseg',''))
 
-        xml_files = sorted(glob(os.path.join(outdir,'out', '*.xml')))
+        xml_files = sorted(glob(os.path.join(outdir,out_dir_name, '*.xml')))
         ## rename xmls
         for k in xml_files:
             os.rename(k, k.replace('.jpg.aux.xml', '.png.aux.xml'))
@@ -548,7 +557,7 @@ if __name__ == "__main__":
 
         if make_RGB_label_ortho:
             ## now we have pngs and png.xml files with the same names in the same folder
-            imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*.png')))
+            imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*.png')))
             print('{} images to mosaic'.format(len(imgsToMosaic)))
 
             # First build vrt for geotiff output
@@ -573,7 +582,7 @@ if __name__ == "__main__":
 
         ## okay, now let's make the greyscale label mosaic
 
-        npzs = sorted(glob(os.path.join(outdir, 'out', '*.npz')))
+        npzs = sorted(glob(os.path.join(outdir, out_dir_name, '*.npz')))
 
         def write_greylabel_to_png(k):
             with np.load(k) as data:
@@ -584,11 +593,11 @@ if __name__ == "__main__":
             write_greylabel_to_png(k)
             
         ## now we have pngs and png.xml files with the same names in the same folder
-        imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*res.png')))
+        imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*res.png')))
         print('{} images to mosaic'.format(len(imgsToMosaic)))
 
 
-        xml_files = sorted(glob(os.path.join(outdir,'out', '*.xml')))
+        xml_files = sorted(glob(os.path.join(outdir, out_dir_name, '*.xml')))
         ## copy and name xmls
         for k in xml_files:
             shutil.copyfile(k,k.replace('.png','_res.png'))
@@ -637,7 +646,7 @@ if __name__ == "__main__":
         for k in npzs:
             dat = write_greyprobs_to_tif(k)
 
-        xml_files = sorted(glob(os.path.join(outdir,'out', '*res*.xml')))
+        xml_files = sorted(glob(os.path.join(outdir,out_dir_name, '*res*.xml')))
         ## copy and name xmls
         for i in range(dat.shape[-1]):
             for k in xml_files:
@@ -654,7 +663,7 @@ if __name__ == "__main__":
             outTIF = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.tif')
 
             ## now we have pngs and png.xml files with the same names in the same folder
-            imgsToMosaic = sorted(glob(os.path.join(outdir, 'out', '*prob'+str(i)+'.tif')))
+            imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*prob'+str(i)+'.tif')))
             print('{} images to mosaic'.format(len(imgsToMosaic)))
 
 
