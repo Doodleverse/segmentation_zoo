@@ -28,38 +28,29 @@ from tkinter import filedialog, messagebox
 from tkinter import *
 import sys, os, shutil, json
 from glob import glob
-
-# local imports
-# import model_functions
+## geospatial imports
+from osgeo import gdal
+gdal.SetCacheMax(2**30) # max out the cache
 
 # local imports
 import model_data_funcs
 import model_inference_funcs
 from model_inference_funcs import tf
 
-## geospatial imports
-from osgeo import gdal
-gdal.SetCacheMax(2**30) # max out the cache
-
 ###### user variables
-####========================
-# resampleAlg = 'mode' # alternatives = # 'nearest', 'max', 'min', 'average', 'gauss'
-# TARGET_SIZE = 1024 #768
-
-# do_parallel = True 
-do_parallel = False
+# do_parallel = True ## use GPU
+do_parallel = False ## dont use GPU
 
 # profile = 'full' ## predseg + meta +overlay
 profile = 'meta' ## predseg + meta 
 # profile = 'minimal' ## predseg
-
 ## profile must be 'meta' or 'full' for this script to work
 
 make_RGB_label_ortho = True # make an RGB label mosaic as well as a greyscale one
-make_jpeg = False ## make JPEG mosaics as well as geotiffs
+make_jpeg = True ## make JPEG mosaics as well as geotiffs
+make_probs = True ##make probability rasters per class
 
 #===============================
-
 if do_parallel:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -133,7 +124,7 @@ if __name__ == "__main__":
     task_id = variable.get()
     print("You chose task : {}".format(task_id))
 
-
+    ##### ask for a output file root name
     #### choose zenodo release
 
     if task_id=="generic_landcover_highres":
@@ -149,10 +140,10 @@ if __name__ == "__main__":
         "aaai_floodedbuildings_7622733",
         "xbd_building_7613212",
         "xbd_damagedbuilding_7613175",
-        "elwha_alluvial_driftwood_7933013"
-        "elwha_alluvial_driftwood_resunet_8072293"
+        "elwha_alluvial_driftwood_segformer_7933013",
+        "elwha_alluvial_sediment_segformer_8172908",
+        "elwha_alluvial_4class_segformer_8172858"
         ]
-        # "floodnet_10class_7566797", this is the 1024x768 px version
 
         variable = StringVar(root)
         variable.set("openearthmap_9class_7576894")
@@ -175,7 +166,6 @@ if __name__ == "__main__":
             "watermask_aerial_nadir_2class_7604077",
             "watermask_pcmsc_wm_v2_7700430"            
         ]
-        # add: barrierIslands
 
         variable = StringVar(root)
         variable.set("orthoCT_5class_7566992")
@@ -265,7 +255,6 @@ if __name__ == "__main__":
 
         # ###==============================================
 
-
     ###############################################
     ################# INPUTS
     ### user inputs
@@ -278,8 +267,6 @@ if __name__ == "__main__":
 
     OVERLAP_PX = TARGET_SIZE//2
     print("Overlap size : {} px".format(OVERLAP_PX))
-
-
 
     #=================================================
     O = []
@@ -302,9 +289,7 @@ if __name__ == "__main__":
 
             O.append(image_ortho)
 
-
     print(O)
-
 
     ##################################
     ##### STEP 2: MAKE ORTHO TILES
@@ -312,76 +297,71 @@ if __name__ == "__main__":
     ###############################################
     ################# ORTHO TILES
     ### make ortho tiles with overlap from the mosaic image
-
     for image_ortho in O:
         print(image_ortho)
         indir = os.path.dirname(image_ortho)
         outdir = indir+os.sep+'tiles'
-        # outdir = indir+os.sep+'tiles_copy'
 
         if os.path.isdir(os.path.normpath(outdir)):
-            print(f"{outdir} already exists ... skipping tile creation")
+            shutil.rmtree(outdir)
+            os.mkdir(outdir)
+
+        else:
+            os.mkdir(outdir)
+
+        ### chop up image ortho into tiles with 50% overlap
+
+        if os.name == "nt":
+
+            try:
+                print("Attempting to use gdal from conda env")
+                cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+                os.system(cmd)
+            except:
+                print("That didn't work. Attempting to use gdal from osgeo4w")
+                from subprocess import Popen, PIPE
+                process=Popen(["python","C:\\OSGeo4W64\\bin\\gdal_retile.py","-r", "near", "-ot", "Byte","-ps",str(TARGET_SIZE),str(TARGET_SIZE),"-overlap",str(OVERLAP_PX),"-co", "tiled=YES","-targetDir",outdir, image_ortho], stdout=PIPE, stderr=PIPE)
+                stdout, stderr = process.communicate()
 
         else:
             try:
-                os.mkdir(outdir)
+                ## it would be cleaner if the gdal_retile.py script could be wrapped in gdal/osgeo python, but it errored for me ...
+                cmd = 'gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+                os.system(cmd)
             except:
-                pass
+                cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
+                os.system(cmd)
 
-            ### chop up image ortho into tiles with 50% overlap
+        ### convert to jpegs for Zoo model
+        kwargs = {
+            'format': 'JPEG',
+            'outputType': gdal.GDT_Byte
+        }
 
-            if os.name == "nt":
+        def gdal_translate_jpeg(f, bandList, kwargs):
+            ds = gdal.Translate(f.replace('.tif','.jpg'), f, bandList=bandList, **kwargs)
+            ds = None # close and save ds
 
-                try:
-                    print("Attempting to use gdal from conda env")
-                    cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
-                    os.system(cmd)
-                except:
-                    print("That didn't work. Attempting to use gdal from osgeo4w")
-                    from subprocess import Popen, PIPE
-                    process=Popen(["python","C:\\OSGeo4W64\\bin\\gdal_retile.py","-r", "near", "-ot", "Byte","-ps",str(TARGET_SIZE),str(TARGET_SIZE),"-overlap",str(OVERLAP_PX),"-co", "tiled=YES","-targetDir",outdir, image_ortho], stdout=PIPE, stderr=PIPE)
-                    stdout, stderr = process.communicate()
+        files_to_convert = glob(outdir+os.sep+'*.tif')
 
-            else:
-                try:
-                    ## it would be cleaner if the gdal_retile.py script could be wrapped in gdal/osgeo python, but it errored for me ...
-                    cmd = 'gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
-                    os.system(cmd)
-                except:
-                    cmd = 'python gdal_retile.py -r near -ot Byte -ps {} {} -overlap {} -co "tiled=YES" -targetDir {} {}'.format(TARGET_SIZE,TARGET_SIZE,OVERLAP_PX,outdir,image_ortho)
-                    os.system(cmd)
+        bandList=[1,2,3]
 
-            ### convert to jpegs for Zoo model
-            kwargs = {
-                'format': 'JPEG',
-                'outputType': gdal.GDT_Byte
-            }
+        if len(files_to_convert)>0:
 
-            def gdal_translate_jpeg(f, bandList, kwargs):
-                ds = gdal.Translate(f.replace('.tif','.jpg'), f, bandList=bandList, **kwargs)
-                ds = None # close and save ds
+            for f in files_to_convert:
+                gdal_translate_jpeg(f, bandList, kwargs)
 
-            files_to_convert = glob(outdir+os.sep+'*.tif')
+            ## delete tif files
+            _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
 
-            bandList=[1,2,3]
-
-            if len(files_to_convert)>0:
-
-                for f in files_to_convert:
-                    gdal_translate_jpeg(f, bandList, kwargs)
-
-                ## delete tif files
-                _ = [os.remove(k) for k in glob(outdir+os.sep+'*.tif')]
-
-            else:
-                print("No tif files found")
-                sys.exit(0)
+        else:
+            print("No tif files found")
+            sys.exit(0)
 
         ##################################
         ##### STEP 3: MAKE LABEL TILES
 
         ### apply Zoo model
-
         sample_direc = outdir
 
         if task_id!="custom":
@@ -453,7 +433,6 @@ if __name__ == "__main__":
         #####################################
         # read images
         #####################################
-
         sample_filenames = model_inference_funcs.sort_files(sample_direc)
         print("Number of samples: %i" % (len(sample_filenames)))
 
@@ -501,9 +480,12 @@ if __name__ == "__main__":
             print(f"{file} failed. Check config file, and check the path provided contains valid imagery")
 
 
+        if len(TARGET_SIZE)>1:
+            TARGET_SIZE = TARGET_SIZE[0]
+        print(TARGET_SIZE)
+
         ##################################
         ##### STEP 4: STITCH ORTHO LABEL TILES
-
         ### now, you have the 'out' folder ...
 
         ## the out folder may contain a bunch of crap we dont want. let's delete those files
@@ -573,13 +555,12 @@ if __name__ == "__main__":
 
             if make_jpeg:
                 # now build jpeg (optional)
-                ds = gdal.Translate(destName=outJPGrgb, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=JPG", "TILED=YES", "TFW=YES", "QUALITY=100"], srcDS=outVRTrgb)
+                ds = gdal.Translate(destName=outJPGrgb, creationOptions=["QUALITY=100"], srcDS=outVRTrgb)
                 ds.FlushCache()
                 ds = None
 
         ##################################
         ##### STEP 5: MAKE AND STITCH ORTHO GREYSCALE LABEL TILES
-
         ## okay, now let's make the greyscale label mosaic
 
         npzs = sorted(glob(os.path.join(outdir, out_dir_name, '*.npz')))
@@ -596,12 +577,10 @@ if __name__ == "__main__":
         imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*res.png')))
         print('{} images to mosaic'.format(len(imgsToMosaic)))
 
-
         xml_files = sorted(glob(os.path.join(outdir, out_dir_name, '*.xml')))
         ## copy and name xmls
         for k in xml_files:
             shutil.copyfile(k,k.replace('.png','_res.png'))
-
 
         # First build vrt for geotiff output
         vrt_options = gdal.BuildVRTOptions(resampleAlg=resampleAlg, srcNodata=0, VRTNodata=0)
@@ -616,65 +595,62 @@ if __name__ == "__main__":
 
         if make_jpeg:
             # now build jpeg (optional)
-            ds = gdal.Translate(destName=outJPG, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=JPG", "TILED=YES", "TFW=YES", "QUALITY=100"], srcDS=outVRT)
+            ds = gdal.Translate(destName=outJPG, creationOptions=["QUALITY=100"], srcDS=outVRT)
             ds.FlushCache()
             ds = None
 
-        ##################################
-        ##### STEP 6: MAKE AND STITCH ORTHO GREYSCALE probability TILES
+        if make_probs:
 
+            ##################################
+            ##### STEP 6: MAKE AND STITCH ORTHO GREYSCALE probability TILES
 
-        def write_greyprobs_to_tif(k):
-            with np.load(k) as data:
-                dat = tf.nn.softmax(data['av_softmax_scores']).numpy().astype('float32')
+            def write_greyprobs_to_tif(k):
+                with np.load(k) as data:
+                    dat = tf.nn.softmax(data['av_softmax_scores']).numpy().astype('float32')
+                if np.ndim(dat)==2:
+                    NCLASSES=1
+                else:
+                    NCLASSES = dat.shape[-1]
+                for i in range(NCLASSES):
+                    if NCLASSES>1:
+                        imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat[:,:,i], check_contrast=False, compression=0)
+                    else:
+                        imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat, check_contrast=False, compression=0)
+
+                return dat
+
+            for k in npzs:
+                dat = write_greyprobs_to_tif(k)
+
+            xml_files = sorted(glob(os.path.join(outdir,out_dir_name, '*res*.xml')))
+            ## copy and name xmls
+            for i in range(dat.shape[-1]):
+                for k in xml_files:
+                    shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
+
             if np.ndim(dat)==2:
                 NCLASSES=1
             else:
                 NCLASSES = dat.shape[-1]
+                
             for i in range(NCLASSES):
-                if NCLASSES>1:
-                    imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat[:,:,i], check_contrast=False, compression=0)
-                else:
-                    imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat, check_contrast=False, compression=0)
+            # for i in range(dat.shape[-1]):
+                outVRT = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.vrt')
+                outTIF = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.tif')
 
-            return dat
-
-        # k=npzs[0]
-        # with np.load(k) as data:
-        #     dat = data['av_softmax_scores']
-
-        for k in npzs:
-            dat = write_greyprobs_to_tif(k)
-
-        xml_files = sorted(glob(os.path.join(outdir,out_dir_name, '*res*.xml')))
-        ## copy and name xmls
-        for i in range(dat.shape[-1]):
-            for k in xml_files:
-                shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
-
-        if np.ndim(dat)==2:
-            NCLASSES=1
-        else:
-            NCLASSES = dat.shape[-1]
-            
-        for i in range(NCLASSES):
-        # for i in range(dat.shape[-1]):
-            outVRT = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.vrt')
-            outTIF = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.tif')
-
-            ## now we have pngs and png.xml files with the same names in the same folder
-            imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*prob'+str(i)+'.tif')))
-            print('{} images to mosaic'.format(len(imgsToMosaic)))
+                ## now we have pngs and png.xml files with the same names in the same folder
+                imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*prob'+str(i)+'.tif')))
+                print('{} images to mosaic'.format(len(imgsToMosaic)))
 
 
-            # First build vrt for geotiff output
-            vrt_options = gdal.BuildVRTOptions(resampleAlg="lanczos",srcNodata=0, VRTNodata=0)
-            ds = gdal.BuildVRT(outVRT, imgsToMosaic, options=vrt_options)
-            ds.FlushCache()
-            ds = None
+                # First build vrt for geotiff output
+                vrt_options = gdal.BuildVRTOptions(resampleAlg="lanczos",srcNodata=0, VRTNodata=0)
+                ds = gdal.BuildVRT(outVRT, imgsToMosaic, options=vrt_options)
+                ds.FlushCache()
+                ds = None
 
-            # then build tiff
-            ds = gdal.Translate(destName=outTIF, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=outVRT)
-            ds.FlushCache()
-            ds = None
+                # then build tiff
+                ds = gdal.Translate(destName=outTIF, creationOptions=["NUM_THREADS=ALL_CPUS", "COMPRESS=LZW", "TILED=YES"], srcDS=outVRT)
+                ds.FlushCache()
+                ds = None
 

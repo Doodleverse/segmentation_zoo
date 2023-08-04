@@ -27,7 +27,7 @@ import sys, os, json
 import traceback
 
 # local imports
-import model_functions
+import model_inference_funcs
 
 # external imports
 from tkinter import filedialog, messagebox
@@ -89,7 +89,8 @@ if __name__ == "__main__":
         "floodnet_10class_7566810",
         "noaa_4class_7631354",
         "elwha_alluvial_driftwood_segformer_7933013",
-        "elwha_alluvial_driftwood_resunet_8072293"
+        "elwha_alluvial_sediment_segformer_8172908",
+        "elwha_alluvial_4class_segformer_8172858"
         ]
 
         variable = StringVar(root)
@@ -98,32 +99,16 @@ if __name__ == "__main__":
     elif task_id=="satellite_shorelines":
 
         choices = [
-        "sat_RGB_4class_segformer_7933015",
+        "sat_RGB_4class_segformer_8190958",
         "sat_RGB_4class_resunet_6950472",
-        "sat_RGB_2class_resunet_7865364",
-        "sat_7band_4class_7358284",
-        "sat_5band_4class_7344606",
-        "sat_5band_2class_7448390",
-        "sat_NDWI_4class_7352859",
-        "sat_MNDWI_4class_7352850",        
-        "sat_NDWI_2class_7557072",
-        "sat_MNDWI_2class_7557080"
+        "sat_NDWI_4class_segformer_8213427",
+        "sat_NDWI_4class_resunet_7352859",        
+        "sat_MNDWI_4class_segformer_8213443",
+        "sat_MNDWI_4class_resunet_7352850"
         ]
 
-        # choices = [
-        # "sat_RGB_2class_7448405",
-        # "sat_5band_2class_7448390",
-        # "sat_NDWI_2class_7557072",
-        # "sat_MNDWI_2class_7557080",
-        # "sat_RGB_4class_6950472",
-        # "sat_5band_4class_7344606",
-        # "sat_NDWI_4class_7352859",
-        # "sat_MNDWI_4class_7352850",
-        # "sat_7band_4class_7358284"
-        # ]
-
         variable = StringVar(root)
-        variable.set("sat_RGB_4class_6950472")
+        variable.set("sat_RGB_4class_segformer_8190958")
 
     elif task_id=="generic_landcover_highres":
 
@@ -214,29 +199,29 @@ if __name__ == "__main__":
         # segmentation zoo directory
         parent_direc = os.path.dirname(os.getcwd())
         # create downloaded models directory in segmentation_zoo/downloaded_models
-        downloaded_models_dir = get_models_dir = model_functions.get_model_dir(parent_direc, "downloaded_models")
+        downloaded_models_dir = get_models_dir = model_inference_funcs.get_model_dir(parent_direc, "downloaded_models")
         print(f"Downloaded Models Located at: {downloaded_models_dir}")
         # directory to hold specific downloaded model
-        model_direc = model_functions.get_model_dir(downloaded_models_dir, dataset_id)
+        model_direc = model_inference_funcs.get_model_dir(downloaded_models_dir, dataset_id)
 
         # get list of available files to download for zenodo id
-        files = model_functions.request_available_files(zenodo_id)
+        files = model_inference_funcs.request_available_files(zenodo_id)
         # print(f"Available files for zenodo {zenodo_id}: {files}")
 
         zipped_model_list = [f for f in files if f["key"].endswith("rgb.zip")]
         # check if zenodo release contains zip file 'rgb.zip'
-        is_zip = model_functions.is_zipped_release(files)
+        is_zip = model_inference_funcs.is_zipped_release(files)
         # zenodo release contained file 'rgb.zip' download it and unzip it
         if is_zip:
             print("Checking for zipped model")
             zip_url = zipped_model_list[0]["links"]["self"]
-            model_direc = model_functions.download_zipped_model(model_direc, zip_url)
+            model_direc = model_inference_funcs.download_zipped_model(model_direc, zip_url)
         # zenodo release contained no zip files. perform async download
         elif is_zip == False:
             if model_choice == "BEST":
-                model_functions.download_BEST_model(files, model_direc)
+                model_inference_funcs.download_BEST_model(files, model_direc)
             elif model_choice == "ENSEMBLE":
-                model_functions.download_ENSEMBLE_model(files, model_direc)
+                model_inference_funcs.download_ENSEMBLE_model(files, model_direc)
 
     ###==============================================
 
@@ -252,7 +237,7 @@ if __name__ == "__main__":
 
     if task_id!="custom":
         # weights_files : list containing all the weight files fill paths
-        weights_files = model_functions.get_weights_list(model_choice, model_direc)
+        weights_files = model_inference_funcs.get_weights_list(model_choice, model_direc)
 
     # For each set of weights in weights_files load them in
     M = []
@@ -292,7 +277,7 @@ if __name__ == "__main__":
         # create the model with the data loaded in from the weights file
         print("Creating and compiling model {}...".format(counter))
         try:
-            model, model_list, config_files, model_names = model_functions.get_model(weights_files)
+            model, model_list, config_files, model_names = model_inference_funcs.get_model(weights_files)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -300,10 +285,10 @@ if __name__ == "__main__":
             sys.exit(2)
 
         # get dictionary containing all files needed to run models on data
-        metadatadict = model_functions.get_metadatadict(weights_files, config_files, model_names)
+        metadatadict = model_inference_funcs.get_metadatadict(weights_files, config_files, model_names)
 
     # read contents of config file into dictionary
-    config = model_functions.get_config(weights_files)
+    config = model_inference_funcs.get_config(weights_files)
     TARGET_SIZE = config.get("TARGET_SIZE")
     NCLASSES = config.get("NCLASSES")
     N_DATA_BANDS = config.get("N_DATA_BANDS")
@@ -319,7 +304,7 @@ if __name__ == "__main__":
     # read images
     #####################################
 
-    sample_filenames = model_functions.sort_files(sample_direc)
+    sample_filenames = model_inference_funcs.sort_files(sample_direc)
     print("Number of samples: %i" % (len(sample_filenames)))
 
     #####################################
@@ -345,10 +330,12 @@ if __name__ == "__main__":
     print(f"WRITE_MODELMETADATA: {WRITE_MODELMETADATA}")
     print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
 
+    out_dir_name = str(zenodo_id)
+
     # run models on imagery
     try:
         print(f"file: {file}")
-        model_functions.compute_segmentation(
+        model_inference_funcs.compute_segmentation(
             TARGET_SIZE,
             N_DATA_BANDS,
             NCLASSES,
@@ -356,8 +343,8 @@ if __name__ == "__main__":
             sample_direc,
             model_list,
             metadatadict,
-            do_parallel,
-            profile
+            profile,
+            out_dir_name
         )
     except Exception as e:
         print(e)
