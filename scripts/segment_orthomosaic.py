@@ -64,6 +64,9 @@ if __name__ == "__main__":
     root.geometry('200x100')
 
     choices = [
+        "32",
+        "64",
+        "128",
         "256",
         "512",
         "768",
@@ -160,7 +163,7 @@ if __name__ == "__main__":
             "orthoCT_8class_7570583",
             "orthoCT_8class_segformer_7641724",
             "chesapeake_7class_7576904",
-            "chesapeake_7class_segformer_7677506"
+            "chesapeake_7class_segformer_7677506",
             "watermask_noaa_oblique_2class_7604083",
             "watermask_aerial_oblique_2class_7604075",
             "watermask_aerial_nadir_2class_7604077",
@@ -626,7 +629,10 @@ if __name__ == "__main__":
             ## copy and name xmls
             for i in range(dat.shape[-1]):
                 for k in xml_files:
-                    shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
+                    try:
+                        shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
+                    except:
+                        pass
 
             if np.ndim(dat)==2:
                 NCLASSES=1
