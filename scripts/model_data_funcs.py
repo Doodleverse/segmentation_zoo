@@ -4,6 +4,8 @@ import os, json
 import asyncio
 import platform
 
+from aiohttp import ClientTimeout
+
 # external imports
 from glob import glob
 
@@ -155,7 +157,11 @@ async def fetch_all(session: aiohttp.client.ClientSession, url_dict: dict) -> No
 
 async def async_download_urls(url_dict: dict) -> None:
     # error raised if downloads dont's complete in 600 seconds (10 mins)
-    async with aiohttp.ClientSession(raise_for_status=True, timeout=600) as session:
+    # async with aiohttp.ClientSession(raise_for_status=True, timeout=600) as session:
+    #     await fetch_all(session, url_dict)
+
+    timeout = ClientTimeout(total=600)
+    async with aiohttp.ClientSession(raise_for_status=True, timeout=timeout) as session:
         await fetch_all(session, url_dict)
 
 
