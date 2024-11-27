@@ -1,24 +1,24 @@
 name: zoo
 channels:
   - conda-forge
+  - nvidia
   - defaults
 dependencies:
-  - python
-  - scipy
-  - numpy
-  - scikit-image
-  - cython
-  - tensorflow-gpu
-  - ipython
-  - jupyter
-  - joblib
-  - tqdm >=4.64.1
-  - pandas
-  - pip
-  - plotly
-  - natsort
-  - matplotlib
-  - pip:
-      - doodleverse_utils
-      - ipyfilechooser
-      - aiohttp
+ - python=3.10
+ - scipy
+ - numpy
+ - scikit-image
+ - cuda
+ - cudatoolkit=11.8.0
+ - ipython
+ - joblib
+ - tqdm
+ - pandas
+ - pip
+ - natsort
+ - matplotlib
+ - pip:
+    - doodleverse_utils
+    - transformers
+    - nvidia-cudnn-cu11==8.6.0.163
+    - tensorflow==2.12.*

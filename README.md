@@ -37,6 +37,8 @@ We welcome collaboration! Please use our [Discussions tab](https://github.com/Do
 
 If you already have the conda environment, `gym`, installed from [Segmentation Gym](https://github.com/Doodleverse/segmentation_gym), you may use that. Otherwise, we advise creating a new conda environment to run the program.
 
+Note that MACS are NOT SUPPORTED. Only Linux and WSL on Windows. Not sorry :)
+
 1. Clone the repo:
 
 ```
@@ -47,21 +49,33 @@ git clone --depth 1 https://github.com/Doodleverse/segmentation_zoo.git
 
 2. Create a conda environment called `zoo`
 
+[OPTIONAL] First you may want to do some conda and pip housekeeping (recommended)
+
 ```
-conda create -n zoo python=3.9
+conda update -n base conda
+conda clean --all
+python3 -m pip install --upgrade pip
+```
+
+[OPTIONAL] Set mamba to the default installer:
+
+```
+conda install -n base conda-libmamba-solver
+conda config --set solver libmamba
+```
+
+
+(updated November 20, 2024)
+
+
+```
+conda env create --file ./install/zoo.yml
+```
+
+```
 conda activate zoo
-conda install -c conda-forge "tqdm>=4.64.1" scipy numpy scikit-image jupyterlab joblib pandas plotly natsort matplotlib -y
-pip install tensorflow doodleverse_utils==0.0.29 ipyfilechooser aiohttp
-pip install tensorflow-gpu
 ```
 
-If you get errors associated with loading the model weights you may need to:
-
-```
-pip install "h5py==2.10.0" --force-reinstall
-```
-
-and just ignore any errors.
 
 ## Segmentation Zoo User Roles
 
@@ -83,18 +97,13 @@ The set of available tasks.models are listed below, by theme and more details ma
 
 ### Task: satellite-derived shoreline location extraction
 
-* 2-class models
-   * "sat_RGB_2class_resunet_7865364", 2 class (water, other), RGB satellite imagery
-   * "sat_5band_2class_7448390", 2 class (water, other), RGB+NIR+SWIR satellite imagery
-   * "sat_NDWI_2class_7557072", 2 class (water, other), NDWI satellite imagery
-   * "sat_MNDWI_2class_7557080", 2 class (water, other), MNDWI satellite imagery
 * 4-class models
-   * "sat_RGB_4class_segformer_7933015", 4 class (water, whitewater, sediment, other), RGB satellite imagery, segformer
-   * "sat_RGB_4class_resunet_6950472", 4 class (water, whitewater, sediment, other), RGB satellite imagery, resunet
-   * "sat_5band_4class_7344606", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR satellite imagery
-   * "sat_NDWI_4class_7352859", 4 class (water, whitewater, sediment, other), NDWI satellite imagery
-   * "sat_MNDWI_4class_7352850", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery
-   * "sat_7band_4class_7358284", 4 class (water, whitewater, sediment, other), RGB+NIR+SWIR+NDWI+MNDWI satellite imagery
+   * "sat_RGB_4class_segformer_global_14183210", 4 class (water, whitewater, sediment, other), RGB satellite imagery, Global edition, segformer
+   * "sat_RGB_4class_segformer_AK_14037041", 4 class (water, whitewater, sediment, other), RGB satellite imagery, Alaska-only edition, segformer
+   * "sat_NDWI_4class_segformer_global_14172182", 4 class (water, whitewater, sediment, other), NDWI satellite imagery, Global edition, segformer
+   * "sat_NDWI_4class_segformer_AK_14183210", 4 class (water, whitewater, sediment, other), NDWI satellite imagery, Alaska-only edition, segformer
+   * "sat_MNDWI_4class_segformer_global_14183366", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery, Global edition, segformer
+   * "sat_MNDWI_4class_segformer_AK_14187478", 4 class (water, whitewater, sediment, other), MNDWI satellite imagery, Alaska-only edition, segformer
 
 ### Task: masking water in aerial images
 
@@ -113,6 +122,9 @@ The set of available tasks.models are listed below, by theme and more details ma
 * Elwha River alluvial models
    * "elwha_alluvial_driftwood_segformer_7933013", 2 class (other, wood), RGB aerial orthomosaic imagery, 768x768 pixel imagery, segformer
    * "elwha_alluvial_driftwood_resunet_8072293", 2 class (other, wood), RGB aerial orthomosaic imagery, 768x768 pixel imagery, resunet
+* Elwha delta sediment models
+   * "elwha_beachsediment_4class_segformer_14199980", 4-class (sand, gravel, cobble, other) RGB close-range sediment imagery, 768x768 pixel imagery, segformer
+
 
 ### Task: coastal landcover classification in Orthomosaic / NAIP (Seg2Map)
 

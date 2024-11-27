@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2022-2023, Marda Science LLC
+# Copyright (c) 2022-2024, Marda Science LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -77,11 +77,11 @@ if __name__ == "__main__":
         "noaa_oblique_2class_7604083",
         "aerial_oblique_2class_7604075",
         "aerial_nadir_2class_7604077",
-        "pcmsc_wm_v2_7700430"
+        "aerial_oblique_westcoast_segformer_14194496"
         ]
 
         variable = StringVar(root)
-        variable.set("aerial_oblique_2class_7604075")
+        variable.set("aerial_oblique_westcoast_segformer_14194496")
 
     elif task_id=="aerial_landcover":
 
@@ -90,7 +90,8 @@ if __name__ == "__main__":
         "noaa_4class_7631354",
         "elwha_alluvial_driftwood_segformer_7933013",
         "elwha_alluvial_sediment_segformer_8172908",
-        "elwha_alluvial_4class_segformer_8172858"
+        "elwha_alluvial_4class_segformer_8172858",
+        "elwha_beachsediment_4class_segformer_14199980"
         ]
 
         variable = StringVar(root)
@@ -99,16 +100,16 @@ if __name__ == "__main__":
     elif task_id=="satellite_shorelines":
 
         choices = [
-        "sat_RGB_4class_segformer_8190958",
-        "sat_RGB_4class_resunet_6950472",
-        "sat_NDWI_4class_segformer_8213427",
-        "sat_NDWI_4class_resunet_7352859",        
-        "sat_MNDWI_4class_segformer_8213443",
-        "sat_MNDWI_4class_resunet_7352850"
+        "sat_RGB_4class_segformer_global_14183210",
+        "sat_RGB_4class_segformer_AK_14037041",
+        "sat_NDWI_4class_segformer_global_14172182",
+        "sat_NDWI_4class_segformer_AK_14183210",        
+        "sat_MNDWI_4class_segformer_global_14183366",
+        "sat_MNDWI_4class_segformer_AK_14187478"  
         ]
 
         variable = StringVar(root)
-        variable.set("sat_RGB_4class_segformer_8190958")
+        variable.set("sat_RGB_4class_segformer_global_14183210")
 
     elif task_id=="generic_landcover_highres":
 
