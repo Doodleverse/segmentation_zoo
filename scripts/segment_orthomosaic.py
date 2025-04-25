@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2023, Marda Science LLC
+# Copyright (c) 2023-2025, Marda Science LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -46,8 +46,8 @@ profile = 'meta' ## predseg + meta
 # profile = 'minimal' ## predseg
 ## profile must be 'meta' or 'full' for this script to work
 
-make_RGB_label_ortho = True # make an RGB label mosaic as well as a greyscale one
-make_jpeg = True ## make JPEG mosaics as well as geotiffs
+make_RGB_label_ortho = False # make an RGB label mosaic as well as a greyscale one
+make_jpeg   = False ## make JPEG mosaics as well as geotiffs
 make_probs = True ##make probability rasters per class
 
 #===============================
@@ -454,6 +454,8 @@ if __name__ == "__main__":
             print("OTSU_THRESHOLD not found in config file(s). Setting to False")
             OTSU_THRESHOLD = False
 
+        TESTTIMEAUG = False
+
         print(f"TESTTIMEAUG: {TESTTIMEAUG}")
         print(f"WRITE_MODELMETADATA: {WRITE_MODELMETADATA}")
         print(f"OTSU_THRESHOLD: {OTSU_THRESHOLD}")
@@ -525,17 +527,19 @@ if __name__ == "__main__":
         ################# LABEL ORTHO CREATION 
         ### let's stitch the label "predseg" pngs!
 
+        prefix = image_ortho.split(os.sep)[-1].split('.tif')[0]
+
         # make some output paths
         if make_RGB_label_ortho:
-            outVRTrgb = os.path.join(indir, 'MosaicRGB.vrt')
-            outTIFrgb = os.path.join(indir, 'MosaicRGB.tif')
+            outVRTrgb = os.path.join(indir, prefix+'_MosaicRGB.vrt')
+            outTIFrgb = os.path.join(indir, prefix+'_MosaicRGB.tif')
             if make_jpeg:
-                outJPGrgb = os.path.join(indir, 'MosaicRGB.jpg')
+                outJPGrgb = os.path.join(indir, prefix+'_MosaicRGB.jpg')
 
-        outVRT = os.path.join(indir, 'Mosaic.vrt')
-        outTIF = os.path.join(indir, 'Mosaic.tif')
+        outVRT = os.path.join(indir, prefix+'_Mosaic.vrt')
+        outTIF = os.path.join(indir, prefix+'_Mosaic.tif')
         if make_jpeg:
-            outJPG = os.path.join(indir, 'Mosaic.jpg')
+            outJPG = os.path.join(indir, prefix+'_Mosaic.jpg')
 
         if make_RGB_label_ortho:
             ## now we have pngs and png.xml files with the same names in the same folder
@@ -604,13 +608,13 @@ if __name__ == "__main__":
             ##################################
             ##### STEP 6: MAKE AND STITCH ORTHO GREYSCALE probability TILES
 
-            def write_greyprobs_to_tif(k):
+            def write_greyprobs_to_tif(k, NCLASSES):
                 with np.load(k) as data:
                     dat = tf.nn.softmax(data['av_softmax_scores']).numpy().astype('float32')
                 if np.ndim(dat)==2:
-                    NCLASSES=1
-                else:
-                    NCLASSES = dat.shape[-1]
+                    dat = np.zeros((dat.shape[0],dat.shape[1],NCLASSES)).astype('float32')
+                # else:
+                #     NCLASSES = dat.shape[-1]
                 for i in range(NCLASSES):
                     if NCLASSES>1:
                         imsave(k.replace('res.npz','prob'+str(i)+'.tif'), dat[:,:,i], check_contrast=False, compression=0)
@@ -620,7 +624,7 @@ if __name__ == "__main__":
                 return dat
 
             for k in npzs:
-                dat = write_greyprobs_to_tif(k)
+                dat = write_greyprobs_to_tif(k, NCLASSES)
 
             xml_files = sorted(glob(os.path.join(outdir,out_dir_name, '*res*.xml')))
             ## copy and name xmls
@@ -628,15 +632,15 @@ if __name__ == "__main__":
                 for k in xml_files:
                     shutil.copyfile(k,k.replace('_res.png','_prob'+str(i)+'.tif'))
 
-            if np.ndim(dat)==2:
-                NCLASSES=1
-            else:
-                NCLASSES = dat.shape[-1]
+            # if np.ndim(dat)==2:
+            #     NCLASSES=1
+            # else:
+            #     NCLASSES = dat.shape[-1]
                 
             for i in range(NCLASSES):
             # for i in range(dat.shape[-1]):
-                outVRT = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.vrt')
-                outTIF = os.path.join(indir, 'Mosaic_Prob'+str(i)+'.tif')
+                outVRT = os.path.join(indir, prefix+'_Mosaic_Prob'+str(i)+'.vrt')
+                outTIF = os.path.join(indir, prefix+'_Mosaic_Prob'+str(i)+'.tif')
 
                 ## now we have pngs and png.xml files with the same names in the same folder
                 imgsToMosaic = sorted(glob(os.path.join(outdir, out_dir_name, '*prob'+str(i)+'.tif')))
