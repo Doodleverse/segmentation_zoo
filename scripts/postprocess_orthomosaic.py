@@ -41,12 +41,12 @@ from rio_cogeo.profiles import cog_profiles
 # from skimage.morphology import disk
 # from skimage.morphology import disk, opening, dilation, area_closing, area_opening, remove_small_holes, remove_small_objects
 
-root = '/mnt/c/willamette/Willamette_woodtestreach-002/Ortho_Poly/MKR_2023_0/E/'
-ortho1 = root+'E_Mosaic_Prob0.tif'
-ortho2 = root+'E_Mosaic_Prob1.tif'
-ortho3 = root+'E_Mosaic_Prob2.tif'
-ortho4 = root+'E_Mosaic_Prob3.tif'
-cog_filename = root+"MKR_2023_0_E_COG.tif"
+root = '/mnt/c/willamette/Willamette_woodtestreach-002/Ortho_Poly/MKR_2023_1/C/'
+ortho1 = root+'C_Mosaic_Prob0.tif'
+ortho2 = root+'C_Mosaic_Prob1.tif'
+ortho3 = root+'C_Mosaic_Prob2.tif'
+ortho4 = root+'C_Mosaic_Prob3.tif'
+cog_filename = root+"MKR_2023_1_C_COG.tif"
 
 ### read mosaic into memory
 print("Read mosaics into memory ...")
